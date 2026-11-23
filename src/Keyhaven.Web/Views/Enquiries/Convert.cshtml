@@ -1,0 +1,64 @@
+@model ConvertEnquiryModel
+@{
+    ViewData["Title"] = "Convert enquiry";
+    var enquiry = ViewBag.Enquiry as Enquiry;
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Enquiries</div>
+        <h1 class="page-title">Convert to a viewing.</h1>
+        <p class="page-subtitle">Move the enquiry into the diary without losing the thread.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-outline" asp-action="Index">← Enquiries</a></div>
+</div>
+
+@if (enquiry is not null)
+{
+    <div class="split-even">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">The enquiry</div><div class="card-sub">What the applicant asked</div></div></div>
+            <div class="card-body">
+                <div class="row" style="margin-bottom:12px">
+                    <span class="avatar lg">@(enquiry.Name.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                    <div>
+                        <div style="font-weight:650">@enquiry.Name</div>
+                        <div class="small muted">@enquiry.Email · @enquiry.Source.Label()</div>
+                    </div>
+                </div>
+                <p class="small" style="line-height:1.65">@enquiry.Message</p>
+                @if (enquiry.Property is not null)
+                {
+                    <div class="divider"></div>
+                    <a class="row" style="gap:9px" asp-controller="Properties" asp-action="Details" asp-route-id="@enquiry.Property.Id">
+                        <div class="list-icon"><icon name="building" /></div>
+                        <div><div class="small strong">@enquiry.Property.Reference</div><div class="tiny muted">@enquiry.Property.ShortAddress · @enquiry.Property.MonthlyRent.Money() pcm</div></div>
+                    </a>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Schedule the viewing</div><div class="card-sub">The applicant becomes a diary entry</div></div></div>
+            <div class="card-body">
+                <form asp-action="Convert" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="EnquiryId" />
+                    <div class="field">
+                        <label asp-for="ScheduledAt">Date & time</label>
+                        <input asp-for="ScheduledAt" type="datetime-local" />
+                        <span asp-validation-for="ScheduledAt" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="AgentNotes">Agent notes</label>
+                        <textarea asp-for="AgentNotes" rows="4" placeholder="Anything to remember for the appointment."></textarea>
+                    </div>
+                    <div class="callout info">
+                        <icon name="calendar" />
+                        <div>The viewing is created as confirmed, with a pre-screening invite recorded. The enquiry is marked converted.</div>
+                    </div>
+                    <button class="btn btn-primary btn-block" style="margin-top:14px" type="submit">Convert & book</button>
+                </form>
+            </div>
+        </div>
+    </div>
+}

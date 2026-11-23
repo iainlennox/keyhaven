@@ -1,0 +1,188 @@
+@model TenantDashboardViewModel
+@{
+    ViewData["Title"] = "My home";
+    var firstName = Model.Tenant?.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "there";
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    var upToDate = Model.Outstanding <= 0;
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Tenant portal · @DateTime.Today.ToString("dddd d MMMM yyyy")</div>
+        <h1 class="page-title">@greeting, @firstName.</h1>
+        <p class="page-subtitle">Your home, your rent and your repairs — all in one place.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-controller="Rent" asp-action="Index"><icon name="wallet" /> My payments</a>
+        <a class="btn btn-primary" asp-controller="Maintenance" asp-action="Create"><icon name="wrench" /> Report a repair</a>
+    </div>
+</div>
+
+@if (Model.Tenancy is null || Model.Property is null)
+{
+    <div class="card">
+        <div class="empty">
+            <div class="empty-icon"><icon name="home" /></div>
+            <div class="empty-title">No active tenancy found</div>
+            <div class="empty-text">Ask your letting agent to link your tenant account to a tenancy.</div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="hero-band" style="min-height:250px">
+        <img src="@(Model.Property.ImageUrl ?? "/img/property-glasgow.svg")" alt="@Model.Property.ShortAddress" />
+        <div class="hero-band-inner">
+            <div>
+                <div class="ref-chip">@Model.Property.Reference · Your home</div>
+                <h1>@Model.Property.AddressLine1</h1>
+                <div class="sub">@Model.Property.City @Model.Property.Postcode · @Model.Property.Bedrooms bedroom @Model.Property.Type.Label().ToLowerInvariant()</div>
+            </div>
+            <div class="row wrap">
+                <span class="badge badge-positive">Tenancy active</span>
+                <a class="btn btn-outline" asp-controller="Properties" asp-action="Details" asp-route-id="@Model.Property.Id">View property record</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-grid">
+        <div class="stat">
+            <div class="stat-icon @(upToDate ? "sage" : "danger")"><icon name="@(upToDate ? "check" : "alert")" /></div>
+            <div class="stat-label">Rent status</div>
+            <div class="stat-value" style="@(upToDate ? "" : "color:var(--danger)")">@(upToDate ? "Up to date" : Model.Outstanding.Money())</div>
+            <div class="stat-meta">@(upToDate ? "No balance outstanding" : "Outstanding across your account")</div>
+        </div>
+        <div class="stat">
+            <div class="stat-icon accent"><icon name="calendar" /></div>
+            <div class="stat-label">Next payment</div>
+            <div class="stat-value">@Model.RentAmount.Money()</div>
+            <div class="stat-meta">@(Model.NextDueDate is null ? "No schedule recorded" : $"Due {Model.NextDueDate.Value.ShortDate()}")</div>
+        </div>
+        <div class="stat">
+            <div class="stat-icon sage"><icon name="lock" /></div>
+            <div class="stat-label">Deposit</div>
+            <div class="stat-value small-value">@Model.DepositScheme</div>
+            <div class="stat-meta">@(Model.DepositRegistered ? "Registered and protected" : "Registration pending")</div>
+        </div>
+        <div class="stat">
+            <div class="stat-icon @(Model.OpenTickets.Count > 0 ? "warn" : "sage")"><icon name="wrench" /></div>
+            <div class="stat-label">Open repairs</div>
+            <div class="stat-value">@Model.OpenTickets.Count</div>
+            <div class="stat-meta">@(Model.OpenTickets.Count == 0 ? "Nothing outstanding" : "Being looked after")</div>
+        </div>
+    </div>
+
+    <div class="split section-gap">
+        <div class="card">
+            <div class="card-header">
+                <div><div class="card-title">Rent schedule</div><div class="card-sub">Your six most recent charges</div></div>
+                <a class="link-arrow" asp-controller="Rent" asp-action="Index">Full ledger <icon name="arrow-right" /></a>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Period</th><th>Due</th><th class="num">Amount</th><th class="num">Paid</th><th>Status</th></tr></thead>
+                    <tbody>
+                    @foreach (var charge in Model.RecentCharges)
+                    {
+                        var overdue = charge.IsOverdue(DateOnly.FromDateTime(DateTime.Today));
+                        <tr class="@(overdue ? "row-danger" : "")">
+                            <td class="primary-cell">@charge.PeriodStart.ToString("MMMM yyyy")</td>
+                            <td>@charge.DueDate.ShortDate()</td>
+                            <td class="num">@charge.Amount.Money()</td>
+                            <td class="num">@charge.AmountPaid.Money()</td>
+                            <td>
+                                @if (charge.IsFullyPaid)
+                                {
+                                    <span class="badge badge-positive">Paid</span>
+                                }
+                                else if (overdue)
+                                {
+                                    <span class="badge badge-danger">Overdue</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">Due</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="stack-md">
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">My repairs</div><div class="card-sub">Reports in progress</div></div>
+                    <a class="link-arrow" asp-controller="Maintenance" asp-action="Index">All <icon name="arrow-right" /></a>
+                </div>
+                <div class="card-body">
+                    @if (Model.OpenTickets.Count == 0)
+                    {
+                        <div class="empty" style="padding:14px"><div class="empty-title">Nothing outstanding</div><div class="empty-text">Report an issue whenever you need us.</div></div>
+                    }
+                    else
+                    {
+                        <div class="list">
+                            @foreach (var ticket in Model.OpenTickets)
+                            {
+                                <a class="list-row" asp-controller="Maintenance" asp-action="Details" asp-route-id="@ticket.Id">
+                                    <div class="list-icon"><icon name="wrench" /></div>
+                                    <div class="list-body">
+                                        <div class="row between"><span class="list-title">@ticket.Title</span><span class="badge badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label()</span></div>
+                                        <div class="list-sub">@ticket.Reference · @ticket.Status.Label()</div>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="ai-panel">
+                <div class="ai-head"><icon name="sparkles" /> Looking after your home</div>
+                <div class="ai-title">Every repair, in one thread.</div>
+                <div class="ai-text">When you report a repair, it's logged with a reference, triaged for urgency and assigned to the right contractor. You can follow the status here.</div>
+                <a class="btn btn-primary btn-block" style="margin-top:14px" asp-controller="Maintenance" asp-action="Create"><icon name="plus" /> Report a repair</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="split section-gap">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">My tenancy</div><div class="card-sub">Key dates and contact</div></div></div>
+            <div class="card-body">
+                <div class="meta-grid">
+                    <div class="meta-item"><div class="meta-label">Tenant</div><div class="meta-value">@Model.Tenant?.FullName</div><div class="meta-sub">@Model.Tenant?.Email</div></div>
+                    <div class="meta-item"><div class="meta-label">Started</div><div class="meta-value">@Model.Tenancy.StartDate.ShortDate()</div><div class="meta-sub">@(Model.Tenancy.EndDate is null ? "Periodic tenancy" : $"Ends {Model.Tenancy.EndDate.Value.ShortDate()}")</div></div>
+                    <div class="meta-item"><div class="meta-label">Rent</div><div class="meta-value">@Model.RentAmount.Money() pcm</div><div class="meta-sub">Due on the 1st</div></div>
+                    <div class="meta-item"><div class="meta-label">Deposit</div><div class="meta-value">@Model.Tenancy.DepositAmount.Money()</div><div class="meta-sub">@Model.DepositScheme</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Recent conversations</div><div class="card-sub">Notes from your letting team</div></div></div>
+            <div class="card-body">
+                @if (Model.RecentNotes.Count == 0)
+                {
+                    <div class="empty" style="padding:14px"><div class="empty-title">Nothing to show</div><div class="empty-text">Conversations with your team will appear here.</div></div>
+                }
+                else
+                {
+                    <div class="timeline">
+                        @foreach (var note in Model.RecentNotes)
+                        {
+                            <div class="timeline-item">
+                                <span class="timeline-dot sage"></span>
+                                <div class="timeline-head"><span class="timeline-title">@note.Channel.Label() update</span><span class="timeline-time">@note.OccurredAt.Relative()</span></div>
+                                <div class="timeline-text">@note.Summary</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

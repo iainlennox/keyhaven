@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] ?? "Sign in") · Keyhaven</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="auth-shell">
+    <div class="auth-visual">
+        <img src="~/img/hero-architecture.svg" alt="" />
+        <a class="site-brand" asp-controller="Home" asp-action="Index" style="position:relative;z-index:2">
+            <span class="brand-mark"><icon name="key" /></span>
+            <span>
+                <span class="brand-name">Keyhaven</span>
+                <span class="brand-tag">Property platform</span>
+            </span>
+        </a>
+        <div>
+            <div class="auth-quote">Less admin.<br /><em>More letting.</em></div>
+            <p class="auth-quote-sub">The connected workspace behind a well-run UK letting agency — portfolio, compliance, rent and every conversation in one place.</p>
+        </div>
+        <div class="small" style="color:rgba(255,255,255,.55)">Glasgow · United Kingdom · Demo environment</div>
+    </div>
+    <div class="auth-panel">
+        <div class="auth-form">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

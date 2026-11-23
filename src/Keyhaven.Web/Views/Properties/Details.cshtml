@@ -1,0 +1,380 @@
+@model PropertyDetailsViewModel
+@{
+    ViewData["Title"] = Model.Property.Reference;
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var isLandlord = User.IsInRole(Roles.Landlord);
+    var isTenant = User.IsInRole(Roles.Tenant);
+    var showCommercial = isStaff || isLandlord;
+}
+<div class="page-header" style="margin-bottom:16px">
+    <div>
+        <div class="eyebrow">@Model.Property.Reference · Property record</div>
+        <h1 class="page-title">@Model.Property.AddressLine1</h1>
+        <p class="page-subtitle">@Model.Property.City @Model.Property.Postcode · Managed by Keyhaven@(isStaff ? $" · Owner: {Model.Property.Owner?.DisplayName}" : "")</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-action="Index">← Portfolio</a>
+        @if (isStaff)
+        {
+            <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Property.Id"><icon name="doc" /> Edit record</a>
+        }
+        @if (isTenant)
+        {
+            <a class="btn btn-primary" asp-controller="Maintenance" asp-action="Create" asp-route-propertyId="@Model.Property.Id"><icon name="wrench" /> Report a repair</a>
+        }
+    </div>
+</div>
+
+<div class="hero-band">
+    <img src="@(Model.Property.ImageUrl ?? "/img/property-glasgow.svg")" alt="@Model.Property.ShortAddress" />
+    <div class="hero-band-inner">
+        <div>
+            <div class="ref-chip">@Model.Property.Type.Label() · @Model.Property.Bedrooms bed · @Model.Property.Bathrooms bath</div>
+            <h1>@Model.Property.MonthlyRent.Money() <span style="font-family:var(--sans);font-size:13px;font-weight:400;color:rgba(255,255,255,.75)">pcm</span></h1>
+            <div class="sub">@Model.Property.FullAddress</div>
+        </div>
+        <div class="row wrap">
+            <span class="badge badge-@Model.Property.Status.Tone()">@Model.Property.Status.Label()</span>
+            @if (Model.Property.ListingPublished)
+            {
+                <span class="badge badge-info">Listed</span>
+            }
+            @if (isStaff)
+            {
+                <form asp-action="ToggleListing" method="post" style="margin:0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Property.Id" />
+                    <button class="btn btn-outline btn-sm" type="submit"><icon name="eye" /> @(Model.Property.ListingPublished ? "Unpublish" : "Publish listing")</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="pound" /></div>
+        <div class="stat-label">Monthly rent</div>
+        <div class="stat-value">@Model.Property.MonthlyRent.Money()</div>
+        <div class="stat-meta">@(Model.ActiveTenancy is null ? "No active tenancy" : "Tenancy active")</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.ComplianceScore >= 80 ? "sage" : "warn")"><icon name="shield" /></div>
+        <div class="stat-label">Compliance</div>
+        <div class="stat-value">@Model.ComplianceScore%</div>
+        <div class="stat-meta">@Model.Compliance.Count(c => c.State != ComplianceState.Valid) item(s) need attention</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.OpenTickets.Count > 0 ? "warn" : "sage")"><icon name="wrench" /></div>
+        <div class="stat-label">Open repairs</div>
+        <div class="stat-value">@Model.OpenTickets.Count</div>
+        <div class="stat-meta">@(Model.OpenTickets.Count == 0 ? "Nothing outstanding" : "Being managed")</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.Outstanding > 0 ? "danger" : "sage")"><icon name="wallet" /></div>
+        <div class="stat-label">Rent balance</div>
+        <div class="stat-value" style="@(Model.Outstanding > 0 ? "color:var(--danger)" : "")">@Model.Outstanding.Money()</div>
+        <div class="stat-meta">Last six months · @Model.CollectedLastSixMonths.Money() collected</div>
+    </div>
+</div>
+
+<div class="split section-gap">
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header">
+                <div><div class="card-title">Tenancy</div><div class="card-sub">The current agreement</div></div>
+                @if (Model.ActiveTenancy is not null)
+                {
+                    <a class="link-arrow" asp-controller="Tenancies" asp-action="Details" asp-route-id="@Model.ActiveTenancy.Id">Open tenancy <icon name="arrow-right" /></a>
+                }
+            </div>
+            @if (Model.ActiveTenancy is null)
+            {
+                <div class="empty" style="padding:26px">
+                    <div class="empty-icon"><icon name="doc" /></div>
+                    <div class="empty-title">No active tenancy</div>
+                    <div class="empty-text">This property is @Model.Property.Status.Label().ToLowerInvariant().</div>
+                    @if (isStaff)
+                    {
+                        <a class="btn btn-primary btn-sm" style="margin-top:12px" asp-controller="Tenancies" asp-action="Create">Create a tenancy</a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="card-body">
+                    <div class="row" style="align-items:flex-start">
+                        <span class="avatar lg accent">@Model.ActiveTenancy.Tenant?.FullName.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b)</span>
+                        <div style="flex:1">
+                            <div class="row between wrap">
+                                <div>
+                                    <div style="font-weight:650">@Model.ActiveTenancy.Tenant?.FullName</div>
+                                    <div class="small muted">@Model.ActiveTenancy.Tenant?.Email · @Model.ActiveTenancy.Tenant?.Phone</div>
+                                </div>
+                                <span class="badge badge-@Model.ActiveTenancy.Status.Tone()">@Model.ActiveTenancy.Status.Label()</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="meta-grid">
+                                <div class="meta-item"><div class="meta-label">Started</div><div class="meta-value">@Model.ActiveTenancy.StartDate.ShortDate()</div><div class="meta-sub">@(Model.ActiveTenancy.EndDate is null ? "Periodic" : $"Ends {Model.ActiveTenancy.EndDate.Value.ShortDate()}")</div></div>
+                                <div class="meta-item"><div class="meta-label">Rent</div><div class="meta-value">@Model.ActiveTenancy.RentAmount.Money() pcm</div><div class="meta-sub">Due on the 1st</div></div>
+                                <div class="meta-item"><div class="meta-label">Deposit</div><div class="meta-value">@Model.ActiveTenancy.DepositAmount.Money()</div><div class="meta-sub">@Model.ActiveTenancy.DepositSchemeDisplay · @(Model.ActiveTenancy.DepositRegistered ? "registered" : "not registered")</div></div>
+                                <div class="meta-item"><div class="meta-label">Right to Rent</div><div class="meta-value">@(Model.ActiveTenancy.Tenant?.RightToRentChecked == true ? "Checked" : "Not checked")</div><div class="meta-sub">@(Model.ActiveTenancy.Tenant?.RightToRentCheckedOn?.ShortDate() ?? "—")</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (showCommercial)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">Marketing</div><div class="card-sub">Listing copy and publication</div></div>
+                    <span class="badge badge-@(Model.Property.ListingPublished ? "positive" : "muted")">@(Model.Property.ListingPublished ? "Published" : "Not published")</span>
+                </div>
+                <div class="card-body">
+                    <div style="font-family:var(--serif);font-size:20px;letter-spacing:-.02em">@(Model.Property.MarketingHeadline ?? "No marketing headline yet")</div>
+                    <p class="small muted" style="margin-top:8px;line-height:1.65">@(Model.Property.MarketingSummary ?? "Add a short summary to support the listing.")</p>
+                    <div class="divider"></div>
+                    <div class="meta-grid">
+                        <div class="meta-item"><div class="meta-label">Channels</div><div class="meta-value">@(Model.Property.Channels ?? "—")</div></div>
+                        <div class="meta-item"><div class="meta-label">Listed on</div><div class="meta-value">@(Model.Property.ListedOn?.ShortDate() ?? "Not listed")</div></div>
+                        <div class="meta-item"><div class="meta-label">EPC</div><div class="meta-value">@(Model.Property.EpcRating ?? "Not recorded")</div></div>
+                        <div class="meta-item"><div class="meta-label">Enquiries</div><div class="meta-value">@Model.RecentEnquiries.Count recent</div><div class="meta-sub">Captured from all channels</div></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Property.Description))
+                    {
+                        <div class="divider"></div>
+                        <p class="small muted" style="line-height:1.65">@Model.Property.Description</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">Compliance register</div><div class="card-sub">Required certificates for this property</div></div>
+                    @if (isStaff)
+                    {
+                        <a class="link-arrow" asp-controller="Compliance" asp-action="Create" asp-route-propertyId="@Model.Property.Id">Add certificate <icon name="plus" /></a>
+                    }
+                </div>
+                <div class="table-wrap">
+                    <table class="table compact">
+                        <thead><tr><th>Certificate</th><th>Reference</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var row in Model.Compliance)
+                        {
+                            <tr class="@(row.State is ComplianceState.Expired or ComplianceState.Missing ? "row-danger" : row.State == ComplianceState.ExpiringSoon ? "row-warning" : "")">
+                                <td class="primary-cell">@row.Type.Label()</td>
+                                <td>@(row.Certificate?.Reference ?? "—")</td>
+                                <td>
+                                    @if (row.Certificate is null)
+                                    {
+                                        <span class="muted">Not recorded</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@row.Certificate.ExpiresOn.ShortDate()</span>
+                                        <div class="sub-cell">@(row.DaysUntilExpiry < 0 ? $"{Math.Abs(row.DaysUntilExpiry)} days ago" : $"in {row.DaysUntilExpiry} days")</div>
+                                    }
+                                </td>
+                                <td><span class="badge badge-@row.State.Tone()">@row.State.Label()</span></td>
+                                <td>
+                                    @if (isStaff && row.State != ComplianceState.Valid)
+                                    {
+                                        <a class="btn btn-outline btn-sm" asp-controller="Compliance" asp-action="Renew" asp-route-propertyId="@Model.Property.Id" asp-route-type="@row.Type">Renew</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">Maintenance</div><div class="card-sub">Open jobs at this property</div></div>
+                    <a class="link-arrow" asp-controller="Maintenance" asp-action="Create" asp-route-propertyId="@Model.Property.Id">Log a repair <icon name="plus" /></a>
+                </div>
+                @if (Model.OpenTickets.Count == 0)
+                {
+                    <div class="empty" style="padding:24px"><div class="empty-title">No open repairs</div><div class="empty-text">This property has no outstanding jobs.</div></div>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="table compact">
+                            <thead><tr><th>Job</th><th>Contractor</th><th>Priority</th><th>Status</th></tr></thead>
+                            <tbody>
+                            @foreach (var ticket in Model.OpenTickets)
+                            {
+                                <tr>
+                                    <td><a class="primary-cell" asp-controller="Maintenance" asp-action="Details" asp-route-id="@ticket.Id">@ticket.Title</a><div class="sub-cell">@ticket.Reference · @ticket.CreatedAt.Relative()</div></td>
+                                    <td>@(ticket.AssignedContractor?.Name ?? "Unassigned")</td>
+                                    <td><span class="badge badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label()</span></td>
+                                    <td>@ticket.Status.Label()</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (isTenant)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Repairs at my home</div><div class="card-sub">Reports and their progress</div></div></div>
+                @if (Model.OpenTickets.Count == 0)
+                {
+                    <div class="empty" style="padding:24px"><div class="empty-title">No open repairs</div><div class="empty-text">If something needs attention, report it and we'll take it from there.</div></div>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="table compact">
+                            <thead><tr><th>Job</th><th>Priority</th><th>Status</th></tr></thead>
+                            <tbody>
+                            @foreach (var ticket in Model.OpenTickets)
+                            {
+                                <tr><td><a class="primary-cell" asp-controller="Maintenance" asp-action="Details" asp-route-id="@ticket.Id">@ticket.Title</a><div class="sub-cell">@ticket.Reference</div></td><td><span class="badge badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label()</span></td><td>@ticket.Status.Label()</td></tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="stack-md">
+        @if (showCommercial)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Owner</div><div class="card-sub">Client record</div></div></div>
+                <div class="card-body">
+                    <div class="row">
+                        <span class="avatar lg">@(Model.Property.Owner?.DisplayName.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                        <div>
+                            <div style="font-weight:650">@Model.Property.Owner?.DisplayName</div>
+                            <div class="small muted">@Model.Property.Owner?.CompanyName</div>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="stack-sm small">
+                        <div class="row between"><span class="muted">Email</span><span>@Model.Property.Owner?.Email</span></div>
+                        <div class="row between"><span class="muted">Phone</span><span>@Model.Property.Owner?.Phone</span></div>
+                        <div class="row between"><span class="muted">Fee</span><span>@Model.Property.Owner?.ManagementFeePercent%</span></div>
+                        <div class="row between"><span class="muted">Agreement</span><span>@(Model.Property.Owner?.AgreementSigned == true ? "Signed" : "Pending")</span></div>
+                    </div>
+                    @if (isStaff)
+                    {
+                        <a class="btn btn-outline btn-block" style="margin-top:14px" asp-controller="Owners" asp-action="Details" asp-route-id="@Model.Property.OwnerId">Open owner record</a>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">Rent snapshot</div><div class="card-sub">Last six months</div></div>
+                    <a class="link-arrow" asp-controller="Rent" asp-action="Index">Ledger <icon name="arrow-right" /></a>
+                </div>
+                <div class="card-body">
+                    <div class="row between" style="margin-bottom:12px">
+                        <div><div class="tiny muted">Collected</div><div style="font-family:var(--serif);font-size:20px">@Model.CollectedLastSixMonths.Money()</div></div>
+                        <div class="text-right"><div class="tiny muted">Outstanding</div><div style="font-family:var(--serif);font-size:20px;color:@(Model.Outstanding > 0 ? "var(--danger)" : "var(--sage)")">@Model.Outstanding.Money()</div></div>
+                    </div>
+                    @if (Model.RecentCharges.Count == 0)
+                    {
+                        <div class="small muted">No rent charges on record.</div>
+                    }
+                    else
+                    {
+                        <div class="stack-sm">
+                            @foreach (var charge in Model.RecentCharges.Take(4))
+                            {
+                                <div class="row between small">
+                                    <span class="muted">@charge.PeriodStart.ToString("MMM yyyy")</span>
+                                    <span>@charge.AmountPaid.Money() / @charge.Amount.Money()</span>
+                                    <span class="badge badge-@(charge.IsFullyPaid ? "positive" : charge.IsOverdue(DateOnly.FromDateTime(DateTime.Today)) ? "danger" : "warning")">@(charge.IsFullyPaid ? "Paid" : "Due")</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (isStaff)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Key vault</div><div class="card-sub">Keys held against this property</div></div><a class="link-arrow" asp-controller="Keys" asp-action="Index">Vault <icon name="arrow-right" /></a></div>
+                <div class="card-body">
+                    @if (Model.Keys.Count == 0)
+                    {
+                        <div class="small muted">No keys recorded.</div>
+                    }
+                    else
+                    {
+                        @foreach (var key in Model.Keys)
+                        {
+                            <div class="key-card">
+                                <div class="key-icon @(key.IsCheckedOut ? (key.DueBackAt < DateTime.Now ? "overdue" : "out") : "")"><icon name="key" /></div>
+                                <div style="flex:1">
+                                    <div class="small strong">@key.Label</div>
+                                    <div class="tiny muted">@key.Serial · @(key.IsCheckedOut ? $"Out to {key.CheckedOutToName}" : "In the office")</div>
+                                </div>
+                                <span class="badge badge-@(key.IsCheckedOut ? (key.DueBackAt < DateTime.Now ? "danger" : "warning") : "positive")">@(key.IsCheckedOut ? "Out" : "In")</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Diary & enquiries</div><div class="card-sub">Lettings activity</div></div></div>
+                <div class="card-body">
+                    <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:650;margin-bottom:8px">Upcoming viewings</div>
+                    @if (Model.UpcomingViewings.Count == 0)
+                    {
+                        <div class="small muted" style="margin-bottom:14px">No viewings booked.</div>
+                    }
+                    else
+                    {
+                        <div class="list" style="margin-bottom:14px">
+                            @foreach (var viewing in Model.UpcomingViewings)
+                            {
+                                <div class="list-row" style="padding:8px 0">
+                                    <div class="list-body"><div class="list-title">@viewing.ApplicantName</div><div class="list-sub">@viewing.ScheduledAt.ToString("ddd d MMM") · @viewing.ScheduledAt.TimeLabel()</div></div>
+                                    <span class="badge badge-@viewing.Status.Tone()">@viewing.Status.Label()</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:650;margin-bottom:8px">Recent enquiries</div>
+                    @if (Model.RecentEnquiries.Count == 0)
+                    {
+                        <div class="small muted">No recent enquiries.</div>
+                    }
+                    else
+                    {
+                        @foreach (var enquiry in Model.RecentEnquiries)
+                        {
+                            <div class="row between" style="padding:6px 0;border-bottom:1px solid #efebe1">
+                                <div><div class="small strong">@enquiry.Name</div><div class="tiny muted">@enquiry.Source.Label() · @enquiry.ReceivedAt.Relative()</div></div>
+                                <span class="badge badge-@enquiry.Status.Tone()">@enquiry.Status.Label()</span>
+                            </div>
+                        }
+                    }
+                    @if (isStaff)
+                    {
+                        <a class="btn btn-outline btn-block" style="margin-top:14px" asp-controller="Viewings" asp-action="Create" asp-route-propertyId="@Model.Property.Id">Book a viewing</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

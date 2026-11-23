@@ -1,0 +1,83 @@
+@model ViewingFormModel
+@{
+    ViewData["Title"] = "Book a viewing";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Lettings diary</div>
+        <h1 class="page-title">Book a viewing.</h1>
+        <p class="page-subtitle">Put the applicant in the diary, invite pre-screening and keep the property record in step.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-outline" asp-action="Index">← Diary</a></div>
+</div>
+
+<form method="post" asp-action="Create">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+    <div class="split-even">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Applicant</div><div class="card-sub">Who is viewing</div></div></div>
+            <div class="card-body">
+                <div class="field">
+                    <label asp-for="PropertyId">Property</label>
+                    <select asp-for="PropertyId" asp-items="ViewBag.Properties"><option value="">Choose a property</option></select>
+                    <span asp-validation-for="PropertyId" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="ApplicantName">Full name</label>
+                    <input asp-for="ApplicantName" placeholder="Amy Li" />
+                    <span asp-validation-for="ApplicantName" class="field-error"></span>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="ApplicantEmail">Email</label>
+                        <input asp-for="ApplicantEmail" type="email" placeholder="amy@example.com" />
+                        <span asp-validation-for="ApplicantEmail" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="ApplicantPhone">Phone</label>
+                        <input asp-for="ApplicantPhone" placeholder="07700 900000" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">The appointment</div><div class="card-sub">When and how it is set up</div></div></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="ScheduledAt">Date & time</label>
+                        <input asp-for="ScheduledAt" type="datetime-local" />
+                        <span asp-validation-for="ScheduledAt" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="DurationMinutes">Duration (minutes)</label>
+                        <input asp-for="DurationMinutes" type="number" min="15" max="180" step="15" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="Status">Status</label>
+                        <select asp-for="Status" asp-items="Html.GetEnumSelectList<ViewingStatus>()"></select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="PrescreenStatus">Pre-screening</label>
+                        <select asp-for="PrescreenStatus" asp-items="Html.GetEnumSelectList<PrescreenStatus>()"></select>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="AgentNotes">Agent notes</label>
+                    <textarea asp-for="AgentNotes" rows="4" placeholder="Budget, move date, special requirements…"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card section-gap">
+        <div class="card-footer">
+            <div class="form-actions" style="margin:0;padding:0;border:0">
+                <button class="btn btn-primary" type="submit">Book viewing</button>
+                <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>

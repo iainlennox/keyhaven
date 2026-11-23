@@ -1,0 +1,128 @@
+@model ContractorDashboardViewModel
+@{
+    ViewData["Title"] = "My jobs";
+    var firstName = Model.Contractor?.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "there";
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Contractor portal · @DateTime.Today.ToString("dddd d MMMM yyyy")</div>
+        <h1 class="page-title">@greeting, @firstName.</h1>
+        <p class="page-subtitle">@Model.Contractor?.Trade · Your assigned jobs, access details and completion notes.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-controller="Maintenance" asp-action="Index"><icon name="wrench" /> All my jobs</a>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="clipboard" /></div>
+        <div class="stat-label">Active jobs</div>
+        <div class="stat-value">@Model.ActiveJobs.Count</div>
+        <div class="stat-meta">Assigned to you</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.UrgentJobs > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Urgent</div>
+        <div class="stat-value" style="@(Model.UrgentJobs > 0 ? "color:var(--danger)" : "")">@Model.UrgentJobs</div>
+        <div class="stat-meta">Emergency or urgent priority</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="pound" /></div>
+        <div class="stat-label">Quoted value</div>
+        <div class="stat-value">@Model.QuotedValue.Money()</div>
+        <div class="stat-meta">Across active jobs</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="check" /></div>
+        <div class="stat-label">Completed</div>
+        <div class="stat-value">@Model.RecentCompleted.Count</div>
+        <div class="stat-meta">Recent jobs on record</div>
+    </div>
+</div>
+
+<div class="split section-gap">
+    <div class="card">
+        <div class="card-header">
+            <div><div class="card-title">Assigned jobs</div><div class="card-sub">Everything in flight, urgent first</div></div>
+        </div>
+        @if (Model.ActiveJobs.Count == 0)
+        {
+            <div class="empty"><div class="empty-icon"><icon name="check" /></div><div class="empty-title">All clear</div><div class="empty-text">No jobs are currently assigned to you.</div></div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Job</th><th>Property</th><th>Priority</th><th>Status</th><th class="num">Quote</th></tr></thead>
+                    <tbody>
+                    @foreach (var ticket in Model.ActiveJobs)
+                    {
+                        <tr>
+                            <td>
+                                <a class="primary-cell" asp-controller="Maintenance" asp-action="Details" asp-route-id="@ticket.Id">@ticket.Title</a>
+                                <div class="sub-cell">@ticket.Reference · logged @ticket.CreatedAt.Relative()</div>
+                            </td>
+                            <td>@ticket.Property?.Reference<div class="sub-cell">@ticket.Property?.ShortAddress</div></td>
+                            <td><span class="badge badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label()</span></td>
+                            <td>@ticket.Status.Label()</td>
+                            <td class="num">@(ticket.QuoteAmount is null ? "—" : ticket.QuoteAmount.Value.Money())</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Access & key arrangements</div><div class="card-sub">Before you travel</div></div></div>
+            <div class="card-body">
+                <div class="ai-panel">
+                    <div class="ai-head"><icon name="lock" /> On the job record</div>
+                    <div class="ai-title">Know before you go.</div>
+                    <div class="ai-text">Access notes and key arrangements are recorded against each job. The office holds the key register, and every checkout is tracked with a reason and due-back time.</div>
+                    <a class="btn btn-outline btn-block" style="margin-top:14px" asp-controller="Maintenance" asp-action="Index">Open my jobs</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Your details</div><div class="card-sub">Contractor record</div></div></div>
+            <div class="card-body">
+                <div class="meta-grid">
+                    <div class="meta-item"><div class="meta-label">Trade</div><div class="meta-value">@Model.Contractor?.Trade</div></div>
+                    <div class="meta-item"><div class="meta-label">Rating</div><div class="meta-value"><span class="rating"><icon name="star" /> @Model.Contractor?.Rating.ToString("0.0")</span></div></div>
+                    <div class="meta-item"><div class="meta-label">Phone</div><div class="meta-value">@(Model.Contractor?.Phone ?? "—")</div></div>
+                    <div class="meta-item"><div class="meta-label">Insured</div><div class="meta-value">@(Model.Contractor?.Insured == true ? "Yes" : "No")</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.RecentCompleted.Count > 0)
+{
+    <div class="card section-gap">
+        <div class="card-header"><div><div class="card-title">Recently completed</div><div class="card-sub">The last four jobs on your record</div></div></div>
+        <div class="table-wrap">
+            <table class="table compact">
+                <thead><tr><th>Job</th><th>Property</th><th>Completed</th><th>Notes</th></tr></thead>
+                <tbody>
+                @foreach (var ticket in Model.RecentCompleted)
+                {
+                    <tr>
+                        <td class="primary-cell">@ticket.Title<div class="sub-cell">@ticket.Reference</div></td>
+                        <td>@ticket.Property?.ShortAddress</td>
+                        <td>@(ticket.CompletedAt?.ShortDate() ?? "—")</td>
+                        <td class="muted">@(ticket.CompletionNotes ?? "No notes recorded")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

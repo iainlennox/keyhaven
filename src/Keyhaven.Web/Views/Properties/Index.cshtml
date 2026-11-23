@@ -1,0 +1,140 @@
+@model PropertiesIndexViewModel
+@{
+    ViewData["Title"] = "Properties";
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var isTenant = User.IsInRole(Roles.Tenant);
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Portfolio</div>
+        <h1 class="page-title">@(isTenant ? "My home." : "The portfolio.")</h1>
+        <p class="page-subtitle">
+            @if (isTenant)
+            {
+                <text>The property record behind your tenancy, its compliance and the repairs attached to it.</text>
+            }
+            else
+            {
+                <text>Every property, its tenancy, certificates and open work — connected to the same record.</text>
+            }
+        </p>
+    </div>
+    <div class="page-actions">
+        @if (isStaff)
+        {
+            <a class="btn btn-outline" asp-controller="Compliance" asp-action="Index"><icon name="shield" /> Compliance</a>
+            <a class="btn btn-primary" asp-controller="Properties" asp-action="Create"><icon name="plus" /> Add property</a>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon"><icon name="building" /></div>
+        <div class="stat-label">Properties</div>
+        <div class="stat-value">@Model.TotalProperties</div>
+        <div class="stat-meta">In this view</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="check" /></div>
+        <div class="stat-label">Let</div>
+        <div class="stat-value">@Model.LetProperties</div>
+        <div class="stat-meta">With an active tenancy</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="home" /></div>
+        <div class="stat-label">Available</div>
+        <div class="stat-value">@Model.AvailableProperties</div>
+        <div class="stat-meta">Ready for enquiries</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon"><icon name="pound" /></div>
+        <div class="stat-label">Rent roll</div>
+        <div class="stat-value">@Model.RentRoll.Money()</div>
+        <div class="stat-meta">Per calendar month</div>
+    </div>
+</div>
+
+<form class="filters section-gap" method="get" asp-action="Index">
+    <div class="search">
+        <icon name="search" />
+        <input type="search" name="q" value="@Model.Query" placeholder="Search address, reference or owner…" />
+    </div>
+    <select name="status" onchange="this.form.submit()">
+        <option value="">All statuses</option>
+        @foreach (var status in Enum.GetValues<PropertyStatus>())
+        {
+            <option value="@status" selected="@(Model.Status == status.ToString())">@status.Label()</option>
+        }
+    </select>
+    <button class="btn btn-outline" type="submit"><icon name="filter" /> Filter</button>
+    @if (!string.IsNullOrWhiteSpace(Model.Query) || !string.IsNullOrWhiteSpace(Model.Status))
+    {
+        <a class="btn btn-ghost btn-sm" asp-action="Index">Clear</a>
+    }
+</form>
+
+@if (Model.Rows.Count == 0)
+{
+    <div class="card">
+        <div class="empty">
+            <div class="empty-icon"><icon name="building" /></div>
+            <div class="empty-title">No properties match</div>
+            <div class="empty-text">Try a different search or status filter.</div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="property-grid">
+        @foreach (var row in Model.Rows)
+        {
+            <a class="property-card" asp-action="Details" asp-route-id="@row.Property.Id">
+                <div class="property-media">
+                    <img src="@(row.Property.ImageUrl ?? "/img/property-glasgow.svg")" alt="@row.Property.ShortAddress" />
+                    <span class="badge badge-@row.Property.Status.Tone()">@row.Property.Status.Label()</span>
+                    <span class="ref">@row.Property.Reference</span>
+                </div>
+                <div class="property-body">
+                    <div class="property-price">@row.Property.MonthlyRent.Money()<span> pcm</span></div>
+                    <div>
+                        <div class="property-address">@row.Property.AddressLine1</div>
+                        <div class="property-city">@row.Property.City @row.Property.Postcode</div>
+                    </div>
+                    <div class="property-meta">
+                        <span><icon name="building" /> @row.Property.Bedrooms bed</span>
+                        <span><icon name="home" /> @row.Property.Bathrooms bath</span>
+                        <span>@row.Property.Type.Label()</span>
+                    </div>
+                    <div class="property-meta">
+                        @if (row.ActiveTenancy is not null)
+                        {
+                            <span><icon name="user" /> @row.ActiveTenancy.Tenant?.FullName</span>
+                        }
+                        else
+                        {
+                            <span class="muted">No active tenancy</span>
+                        }
+                    </div>
+                    <div class="property-foot">
+                        <div class="row" style="gap:6px">
+                            @if (row.WorstCompliance is ComplianceState.Expired or ComplianceState.Missing)
+                            {
+                                <span class="badge badge-danger">Compliance action</span>
+                            }
+                            else if (row.WorstCompliance == ComplianceState.ExpiringSoon)
+                            {
+                                <span class="badge badge-warning">Renewal due</span>
+                            }
+                            @if (row.OpenTickets > 0)
+                            {
+                                <span class="badge badge-info">@row.OpenTickets repair@(row.OpenTickets == 1 ? "" : "s")</span>
+                            }
+                        </div>
+                        <icon name="arrow-right" />
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}

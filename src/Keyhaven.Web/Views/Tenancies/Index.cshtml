@@ -1,0 +1,94 @@
+@model TenanciesIndexViewModel
+@{
+    ViewData["Title"] = "Tenancies";
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var isTenant = User.IsInRole(Roles.Tenant);
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Lettings</div>
+        <h1 class="page-title">@(isTenant ? "My tenancy." : "Tenancies.")</h1>
+        <p class="page-subtitle">Agreements, deposits and rent schedules, connected to the property and the person.</p>
+    </div>
+    <div class="page-actions">
+        @if (isStaff)
+        {
+            <a class="btn btn-outline" asp-controller="Rent" asp-action="Index"><icon name="wallet" /> Rent ledger</a>
+            <a class="btn btn-primary" asp-action="Create"><icon name="plus" /> New tenancy</a>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="doc" /></div>
+        <div class="stat-label">Active</div>
+        <div class="stat-value">@Model.ActiveCount</div>
+        <div class="stat-meta">Live agreements</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon"><icon name="pound" /></div>
+        <div class="stat-label">Rent roll</div>
+        <div class="stat-value">@Model.RentRoll.Money()</div>
+        <div class="stat-meta">Per calendar month</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.Outstanding > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Outstanding</div>
+        <div class="stat-value" style="@(Model.Outstanding > 0 ? "color:var(--danger)" : "")">@Model.Outstanding.Money()</div>
+        <div class="stat-meta">Across these tenancies</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="clock" /></div>
+        <div class="stat-label">Ending</div>
+        <div class="stat-value">@Model.EndingCount</div>
+        <div class="stat-meta">Notices served</div>
+    </div>
+</div>
+
+<form class="filters section-gap" method="get" asp-action="Index">
+    <div class="search">
+        <icon name="search" />
+        <input type="search" name="q" value="@Model.Query" placeholder="Search tenant, property or postcode…" />
+    </div>
+    <select name="status" onchange="this.form.submit()">
+        <option value="">All statuses</option>
+        @foreach (var status in Enum.GetValues<TenancyStatus>())
+        {
+            <option value="@status" selected="@(Model.Status == status)">@status.Label()</option>
+        }
+    </select>
+    <button class="btn btn-outline" type="submit"><icon name="filter" /> Filter</button>
+</form>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Tenant</th><th>Property</th><th>Status</th><th>Start</th><th class="num">Rent</th><th class="num">Outstanding</th><th>Deposit</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    <td>
+                        <a class="row" style="gap:9px" asp-action="Details" asp-route-id="@row.Tenancy.Id">
+                            <span class="avatar sm">@(row.Tenancy.Tenant?.FullName.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                            <span><span class="primary-cell" style="display:block">@row.Tenancy.Tenant?.FullName</span><span class="sub-cell">@row.Tenancy.Tenant?.Email</span></span>
+                        </a>
+                    </td>
+                    <td><span class="primary-cell">@row.Tenancy.Property?.Reference</span><div class="sub-cell">@row.Tenancy.Property?.ShortAddress</div></td>
+                    <td><span class="badge badge-@row.Tenancy.Status.Tone()">@row.Tenancy.Status.Label()</span></td>
+                    <td>@row.Tenancy.StartDate.ShortDate()</td>
+                    <td class="num">@row.Tenancy.RentAmount.Money()</td>
+                    <td class="num @(row.Outstanding > 0 ? "danger-text" : "")">@row.Outstanding.Money()@if (row.OverdueCharges > 0) { <div class="sub-cell danger-text">@row.OverdueCharges overdue</div> }</td>
+                    <td>@if (row.Tenancy.DepositRegistered) { <span class="badge badge-positive">Registered</span> } else { <span class="badge badge-warning">Pending</span> }</td>
+                    <td class="text-right"><a class="icon-btn" asp-action="Details" asp-route-id="@row.Tenancy.Id"><icon name="chevron-right" /></a></td>
+                </tr>
+            }
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="8"><div class="empty" style="padding:26px"><div class="empty-title">No tenancies match</div><div class="empty-text">Try a different search or status.</div></div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

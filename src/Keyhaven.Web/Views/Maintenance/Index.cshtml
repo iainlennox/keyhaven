@@ -1,0 +1,114 @@
+@model MaintenanceIndexViewModel
+@{
+    ViewData["Title"] = "Maintenance";
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var isTenant = User.IsInRole(Roles.Tenant);
+    var isContractor = User.IsInRole(Roles.Contractor);
+    var filters = new (string Key, string Label, int Count)[]
+    {
+        ("open", "Open", Model.OpenCount),
+        ("urgent", "Urgent", Model.UrgentCount),
+        ("new", "New", Model.NewCount),
+        ("completed", "Completed", Model.CompletedThisMonth),
+        ("all", "All", 0)
+    };
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Operations</div>
+        <h1 class="page-title">@(isTenant ? "My repairs." : isContractor ? "My jobs." : "Maintenance.")</h1>
+        <p class="page-subtitle">
+            @if (isTenant)
+            {
+                <text>Report an issue and follow it through — triage, contractor and completion in one thread.</text>
+            }
+            else if (isContractor)
+            {
+                <text>Everything assigned to you, urgent first, with access notes and completion capture.</text>
+            }
+            else
+            {
+                <text>Every repair triaged, quoted, approved and completed against the property record.</text>
+            }
+        </p>
+    </div>
+    <div class="page-actions">
+        @if (!isContractor)
+        {
+            <a class="btn btn-primary" asp-action="Create"><icon name="plus" /> @(isTenant ? "Report a repair" : "Log a repair")</a>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon"><icon name="clipboard" /></div>
+        <div class="stat-label">New</div>
+        <div class="stat-value">@Model.NewCount</div>
+        <div class="stat-meta">Awaiting triage</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.UrgentCount > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Urgent</div>
+        <div class="stat-value" style="@(Model.UrgentCount > 0 ? "color:var(--danger)" : "")">@Model.UrgentCount</div>
+        <div class="stat-meta">Emergency or urgent</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="wrench" /></div>
+        <div class="stat-label">In progress</div>
+        <div class="stat-value">@Model.InProgressCount</div>
+        <div class="stat-meta">Assigned & underway</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="check" /></div>
+        <div class="stat-label">Completed</div>
+        <div class="stat-value">@Model.CompletedThisMonth</div>
+        <div class="stat-meta">In the last 30 days</div>
+    </div>
+</div>
+
+<div class="row between wrap section-gap" style="margin-bottom:14px">
+    <div class="segmented">
+        @foreach (var filter in filters)
+        {
+            <a class="@(Model.Filter == filter.Key ? "active" : "")" asp-action="Index" asp-route-filter="@filter.Key" asp-route-q="@Model.Query">@filter.Label@if (filter.Count > 0) { <span class="count">@filter.Count</span> }</a>
+        }
+    </div>
+    <form method="get" asp-action="Index" class="row" style="gap:8px">
+        <input type="hidden" name="filter" value="@Model.Filter" />
+        <div class="search" style="position:relative">
+            <icon name="search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted)" />
+            <input type="search" name="q" value="@Model.Query" placeholder="Job, reference or property…" style="padding-left:32px;min-width:230px" />
+        </div>
+        <button class="btn btn-outline btn-sm" type="submit">Search</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Job</th><th>Property</th><th>Priority</th><th>Status</th><th>Contractor</th><th class="num">Quote</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var ticket in Model.Tickets)
+            {
+                <tr class="@(ticket.Urgency == Urgency.Emergency ? "row-danger" : "")">
+                    <td>
+                        <a class="primary-cell" asp-action="Details" asp-route-id="@ticket.Id">@ticket.Title</a>
+                        <div class="sub-cell">@ticket.Reference · @ticket.CreatedAt.Relative() · @ticket.Category.Label()</div>
+                    </td>
+                    <td><span class="primary-cell">@ticket.Property?.Reference</span><div class="sub-cell">@ticket.Property?.ShortAddress</div></td>
+                    <td><span class="badge badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label()</span></td>
+                    <td><span class="badge badge-@ticket.Status.Tone()">@ticket.Status.Label()</span></td>
+                    <td>@(ticket.AssignedContractor?.Name ?? "—")</td>
+                    <td class="num">@(ticket.QuoteAmount is null ? "—" : ticket.QuoteAmount.Value.Money())</td>
+                    <td class="text-right"><a class="icon-btn" asp-action="Details" asp-route-id="@ticket.Id"><icon name="chevron-right" /></a></td>
+                </tr>
+            }
+            @if (Model.Tickets.Count == 0)
+            {
+                <tr><td colspan="7"><div class="empty" style="padding:26px"><div class="empty-icon"><icon name="check" /></div><div class="empty-title">Nothing here</div><div class="empty-text">No repairs match this view.</div></div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

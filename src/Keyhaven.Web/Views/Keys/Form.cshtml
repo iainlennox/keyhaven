@@ -1,0 +1,50 @@
+@model KeyFormModel
+@{
+    ViewData["Title"] = "Add key";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Key vault</div>
+        <h1 class="page-title">Add a key or fob.</h1>
+        <p class="page-subtitle">Record the item, its serial and the property it belongs to.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-outline" asp-action="Index">← Vault</a></div>
+</div>
+
+<form method="post" asp-action="Create">
+    @Html.AntiForgeryToken()
+    <div class="card" style="max-width:720px">
+        <div class="card-header"><div><div class="card-title">Key details</div><div class="card-sub">What is being held</div></div></div>
+        <div class="card-body">
+            <div class="field">
+                <label asp-for="Label">Label</label>
+                <input asp-for="Label" placeholder="House key — KH-1009" />
+                <span asp-validation-for="Label" class="field-error"></span>
+            </div>
+            <div class="form-grid">
+                <div class="field">
+                    <label asp-for="Type">Type</label>
+                    <select asp-for="Type" asp-items="Html.GetEnumSelectList<KeyType>()"></select>
+                </div>
+                <div class="field">
+                    <label asp-for="Serial">Serial / reference</label>
+                    <input asp-for="Serial" placeholder="KH-K0027" />
+                </div>
+            </div>
+            <div class="field">
+                <label asp-for="PropertyId">Property</label>
+                <select asp-for="PropertyId" asp-items="ViewBag.Properties"><option value="">Unassigned / office</option></select>
+            </div>
+            <div class="field">
+                <label asp-for="Notes">Notes</label>
+                <textarea asp-for="Notes" rows="3" placeholder="Where the key is kept, any restrictions."></textarea>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="form-actions" style="margin:0;padding:0;border:0">
+                <button class="btn btn-primary" type="submit">Add to vault</button>
+                <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>

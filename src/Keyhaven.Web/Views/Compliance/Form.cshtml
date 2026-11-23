@@ -1,0 +1,79 @@
+@model ComplianceFormModel
+@{
+    var title = ViewData["Title"] as string ?? "Add certificate";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Compliance register</div>
+        <h1 class="page-title">@title</h1>
+        <p class="page-subtitle">Record the certificate details. The compliance score and expiry watchlist update automatically.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-outline" asp-action="Index">← Register</a></div>
+</div>
+
+<form method="post" asp-action="Create">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+    <div class="split-even">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Certificate</div><div class="card-sub">Type, reference and provider</div></div></div>
+            <div class="card-body">
+                <div class="field">
+                    <label asp-for="PropertyId">Property</label>
+                    <select asp-for="PropertyId" asp-items="ViewBag.Properties"><option value="">Choose a property</option></select>
+                    <span asp-validation-for="PropertyId" class="field-error"></span>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="Type">Certificate type</label>
+                        <select asp-for="Type" asp-items="Html.GetEnumSelectList<ComplianceType>()"></select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Reference">Reference</label>
+                        <input asp-for="Reference" placeholder="GS-1003-26" />
+                        <span asp-validation-for="Reference" class="field-error"></span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="Provider">Provider</label>
+                    <input asp-for="Provider" placeholder="Scottish Gas Certifiers" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Validity</div><div class="card-sub">Issue and expiry dates</div></div></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="IssuedOn">Issued on</label>
+                        <input asp-for="IssuedOn" type="date" />
+                        <span asp-validation-for="IssuedOn" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="ExpiresOn">Expires on</label>
+                        <input asp-for="ExpiresOn" type="date" />
+                        <span asp-validation-for="ExpiresOn" class="field-error"></span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="Notes">Notes</label>
+                    <textarea asp-for="Notes" rows="4" placeholder="Advisory notes, remedial actions or renewal context."></textarea>
+                </div>
+                <div class="callout info">
+                    <icon name="shield" />
+                    <div>Certificates expiring within 30 days appear as “Expiring soon”. Missing required certificates are flagged against the property.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card section-gap">
+        <div class="card-footer">
+            <div class="form-actions" style="margin:0;padding:0;border:0">
+                <button class="btn btn-primary" type="submit">Save certificate</button>
+                <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>

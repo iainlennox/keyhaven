@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Colourful terraced houses in Bristol">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4dedd"/><stop offset="1" stop-color="#f1e8da"/></linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer></filter>
+  </defs>
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="670" cy="105" r="48" fill="#f7ebd4" opacity=".9"/>
+  <path d="M0 540h800v60H0z" fill="#5c6a5e"/>
+  <!-- row of terraces -->
+  <g>
+    <rect x="20" y="240" width="150" height="300" fill="#c9735a"/>
+    <path d="M20 240h150l-20-60H40z" fill="#a95845"/>
+    <rect x="180" y="210" width="140" height="330" fill="#d9b36c"/>
+    <path d="M180 210h140l-18-56h-104z" fill="#b99350"/>
+    <rect x="330" y="255" width="150" height="285" fill="#7c9a8d"/>
+    <path d="M330 255h150l-22-64H352z" fill="#5f8174"/>
+    <rect x="490" y="225" width="140" height="315" fill="#c98f73"/>
+    <path d="M490 225h140l-18-58h-104z" fill="#a86f56"/>
+    <rect x="640" y="265" width="140" height="275" fill="#8d9db0"/>
+    <path d="M640 265h140l-20-60h-100z" fill="#6f8094"/>
+  </g>
+  <g fill="#2f4039">
+    <rect x="44" y="300" width="42" height="64" rx="3"/><rect x="108" y="300" width="42" height="64" rx="3"/><rect x="44" y="405" width="42" height="64" rx="3"/><rect x="108" y="405" width="42" height="64" rx="3"/>
+    <rect x="202" y="270" width="40" height="62" rx="3"/><rect x="262" y="270" width="40" height="62" rx="3"/><rect x="202" y="380" width="40" height="62" rx="3"/><rect x="262" y="380" width="40" height="62" rx="3"/>
+    <rect x="354" y="315" width="42" height="64" rx="3"/><rect x="416" y="315" width="42" height="64" rx="3"/><rect x="354" y="420" width="42" height="64" rx="3"/>
+    <rect x="512" y="285" width="40" height="62" rx="3"/><rect x="572" y="285" width="40" height="62" rx="3"/><rect x="512" y="390" width="40" height="62" rx="3"/><rect x="572" y="390" width="40" height="62" rx="3"/>
+    <rect x="664" y="325" width="40" height="60" rx="3"/><rect x="724" y="325" width="40" height="60" rx="3"/><rect x="664" y="425" width="40" height="60" rx="3"/><rect x="724" y="425" width="40" height="60" rx="3"/>
+  </g>
+  <g fill="#f4dfb2" opacity=".9">
+    <rect x="52" y="310" width="14" height="22"/><rect x="210" y="280" width="14" height="22"/><rect x="364" y="325" width="14" height="22"/><rect x="580" y="400" width="14" height="22"/><rect x="732" y="335" width="14" height="22"/>
+  </g>
+  <g fill="#35463f">
+    <rect x="72" y="510" width="36" height="60" rx="2"/><rect x="232" y="500" width="36" height="70" rx="2"/><rect x="386" y="515" width="36" height="55" rx="2"/><rect x="546" y="505" width="36" height="65" rx="2"/><rect x="700" y="515" width="36" height="55" rx="2"/>
+  </g>
+  <g fill="#4b5f50"><circle cx="30" cy="520" r="26"/><circle cx="780" cy="525" r="30"/></g>
+  <rect width="800" height="600" filter="url(#grain)" opacity=".5"/>
+</svg>

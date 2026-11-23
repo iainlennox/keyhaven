@@ -1,0 +1,208 @@
+﻿@inject CurrentUser CurrentUser
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var role = CurrentUser.Role;
+    var isStaff = role is Roles.Admin or Roles.Manager;
+    var isLandlord = role == Roles.Landlord;
+    var isTenant = role == Roles.Tenant;
+    var isContractor = role == Roles.Contractor;
+    var pageTitle = ViewData["Title"] as string ?? "Workspace";
+    var subtitle = ViewData["Subtitle"] as string;
+    var toast = TempData["Toast"] as string;
+    var toastTone = TempData["ToastTone"] as string ?? "positive";
+}
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@pageTitle · Keyhaven</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <a class="sidebar-brand" asp-controller="Dashboard" asp-action="Index">
+            <span class="brand-mark"><icon name="key" /></span>
+            <span>
+                <span class="brand-name">Keyhaven</span>
+                <span class="brand-tag">Property platform</span>
+            </span>
+        </a>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-label">Workspace</div>
+                <a class="nav-item @(controller == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                    <icon name="dashboard" /> Overview
+                </a>
+            </div>
+
+            @if (isStaff || isLandlord || isTenant)
+            {
+                <div class="nav-section">
+                    <div class="nav-label">Portfolio</div>
+                    <a class="nav-item @(controller == "Properties" ? "active" : "")" asp-controller="Properties" asp-action="Index">
+                        <icon name="building" /> @(isTenant ? "My home" : "Properties")
+                    </a>
+                    @if (isStaff)
+                    {
+                        <a class="nav-item @(controller == "Owners" ? "active" : "")" asp-controller="Owners" asp-action="Index">
+                            <icon name="users" /> Owners
+                        </a>
+                    }
+                    <a class="nav-item @(controller == "Tenancies" ? "active" : "")" asp-controller="Tenancies" asp-action="Index">
+                        <icon name="doc" /> @(isTenant ? "My tenancy" : "Tenancies")
+                    </a>
+                </div>
+            }
+
+            @if (isStaff)
+            {
+                <div class="nav-section">
+                    <div class="nav-label">Lettings</div>
+                    <a class="nav-item @(controller == "Enquiries" ? "active" : "")" asp-controller="Enquiries" asp-action="Index">
+                        <icon name="inbox" /> Enquiries
+                    </a>
+                    <a class="nav-item @(controller == "Viewings" ? "active" : "")" asp-controller="Viewings" asp-action="Index">
+                        <icon name="calendar" /> Viewings
+                    </a>
+                </div>
+            }
+
+            @if (!isContractor)
+            {
+                <div class="nav-section">
+                    <div class="nav-label">Finance</div>
+                    <a class="nav-item @(controller == "Rent" ? "active" : "")" asp-controller="Rent" asp-action="Index">
+                        <icon name="wallet" /> @(isTenant ? "Payments" : "Rent & arrears")
+                    </a>
+                </div>
+            }
+
+            @if (isStaff || isLandlord || isTenant || isContractor)
+            {
+                <div class="nav-section">
+                    <div class="nav-label">Operations</div>
+                    @if (isStaff || isLandlord || isTenant)
+                    {
+                        <a class="nav-item @(controller == "Maintenance" ? "active" : "")" asp-controller="Maintenance" asp-action="Index">
+                            <icon name="wrench" /> @(isTenant ? "My repairs" : "Maintenance")
+                        </a>
+                    }
+                    @if (!isContractor)
+                    {
+                        <a class="nav-item @(controller == "Compliance" ? "active" : "")" asp-controller="Compliance" asp-action="Index">
+                            <icon name="shield" /> Compliance
+                        </a>
+                    }
+                    @if (isStaff)
+                    {
+                        <a class="nav-item @(controller == "Keys" ? "active" : "")" asp-controller="Keys" asp-action="Index">
+                            <icon name="lock" /> Key vault
+                        </a>
+                    }
+                </div>
+            }
+
+            @if (isStaff)
+            {
+                <div class="nav-section">
+                    <div class="nav-label">Relationships</div>
+                    <a class="nav-item @(controller == "Inbox" ? "active" : "")" asp-controller="Inbox" asp-action="Index">
+                        <icon name="sparkles" /> AI inbox
+                    </a>
+                    <a class="nav-item @(controller == "Contacts" ? "active" : "")" asp-controller="Contacts" asp-action="Index">
+                        <icon name="users" /> CRM timeline
+                    </a>
+                    <a class="nav-item @(controller == "Contractors" ? "active" : "")" asp-controller="Contractors" asp-action="Index">
+                        <icon name="wrench" /> Contractors
+                    </a>
+                </div>
+            }
+
+            @if (CurrentUser.IsAdmin)
+            {
+                <div class="nav-section">
+                    <div class="nav-label">Admin</div>
+                    <a class="nav-item @(controller == "Admin" ? "active" : "")" asp-controller="Admin" asp-action="Index">
+                        <icon name="settings" /> Platform settings
+                    </a>
+                </div>
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-mini">
+                <span class="avatar">@CurrentUser.Initials</span>
+                <span style="min-width:0">
+                    <span class="user-mini-name" style="display:block">@CurrentUser.Name</span>
+                    <span class="user-mini-role">@role account</span>
+                </span>
+            </div>
+            <a class="sidebar-help" asp-controller="Home" asp-action="Index">
+                <icon name="arrow-right" /> View the public site
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+    <div class="app-main">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-btn" id="menuBtn" type="button" aria-label="Open navigation">
+                    <icon name="menu" />
+                </button>
+                <div>
+                    <div class="topbar-crumb">Keyhaven / @(controller == "" ? "Workspace" : controller)</div>
+                    <div class="topbar-title">@pageTitle</div>
+                    @if (!string.IsNullOrWhiteSpace(subtitle))
+                    {
+                        <div class="topbar-crumb">@subtitle</div>
+                    }
+                </div>
+            </div>
+            <div class="topbar-actions">
+                @if (isStaff)
+                {
+                    <a class="icon-btn" asp-controller="Inbox" asp-action="Index" title="AI inbox">
+                        <icon name="bell" /><span class="dot"></span>
+                    </a>
+                }
+                <a class="icon-btn" asp-controller="Properties" asp-action="Index" title="Search the portfolio">
+                    <icon name="search" />
+                </a>
+                <div class="user-chip">
+                    <span class="avatar">@CurrentUser.Initials</span>
+                    <div>
+                        <div class="user-chip-name">@CurrentUser.Name</div>
+                        <div class="user-chip-role">@role</div>
+                    </div>
+                </div>
+                <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
+                    @Html.AntiForgeryToken()
+                    <button class="icon-btn" type="submit" title="Sign out"><icon name="logout" /></button>
+                </form>
+            </div>
+        </header>
+
+        <main class="content">
+            @RenderBody()
+        </main>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(toast))
+{
+    <div class="toast @toastTone" id="toast">
+        <icon name="@(toastTone == "danger" ? "alert" : toastTone == "warning" ? "alert" : "check")" />
+        <div>@toast</div>
+        <button class="toast-close" type="button" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
+    </div>
+}
+
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,96 @@
+@model OwnersIndexViewModel
+@{
+    ViewData["Title"] = "Owners";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Client relationships</div>
+        <h1 class="page-title">Owners & portfolios.</h1>
+        <p class="page-subtitle">The client record behind every property — onboarding, agreements, rent roll and the conversations that hold it together.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-primary" asp-action="Create"><icon name="plus" /> Add owner</a>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="users" /></div>
+        <div class="stat-label">Active owners</div>
+        <div class="stat-value">@Model.ActiveCount</div>
+        <div class="stat-meta">@Model.OnboardingCount onboarding</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon"><icon name="building" /></div>
+        <div class="stat-label">Managed properties</div>
+        <div class="stat-value">@Model.PropertyCount</div>
+        <div class="stat-meta">Across all owners</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="pound" /></div>
+        <div class="stat-label">Rent roll</div>
+        <div class="stat-value">@Model.RentRoll.Money()</div>
+        <div class="stat-meta">Per calendar month</div>
+    </div>
+</div>
+
+<form class="filters section-gap" method="get" asp-action="Index">
+    <div class="search">
+        <icon name="search" />
+        <input type="search" name="q" value="@Model.Query" placeholder="Search owner, company or email…" />
+    </div>
+    <select name="status" onchange="this.form.submit()">
+        <option value="">All stages</option>
+        @foreach (var status in Enum.GetValues<OwnerStatus>())
+        {
+            <option value="@status" selected="@(Model.Status == status)">@status.Label()</option>
+        }
+    </select>
+    <button class="btn btn-outline" type="submit"><icon name="filter" /> Filter</button>
+</form>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+            <tr><th>Owner</th><th>Status</th><th class="num">Properties</th><th class="num">Tenancies</th><th class="num">Rent roll</th><th class="num">Arrears</th><th>Agreement</th><th></th></tr>
+            </thead>
+            <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    <td>
+                        <a class="row" style="gap:10px" asp-action="Details" asp-route-id="@row.Owner.Id">
+                            <span class="avatar">@(row.Owner.DisplayName.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                            <span>
+                                <span class="primary-cell" style="display:block">@row.Owner.DisplayName</span>
+                                <span class="sub-cell">@(row.Owner.CompanyName ?? row.Owner.Email)</span>
+                            </span>
+                        </a>
+                    </td>
+                    <td><span class="badge badge-@row.Owner.Status.Tone()">@row.Owner.Status.Label()</span></td>
+                    <td class="num">@row.PropertyCount</td>
+                    <td class="num">@row.ActiveTenancies</td>
+                    <td class="num">@row.RentRoll.Money()</td>
+                    <td class="num @(row.Arrears > 0 ? "danger-text" : "")">@row.Arrears.Money()</td>
+                    <td>
+                        @if (row.Owner.AgreementSigned)
+                        {
+                            <span class="badge badge-positive">Signed</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warning">Pending</span>
+                        }
+                    </td>
+                    <td class="text-right"><a class="icon-btn" asp-action="Details" asp-route-id="@row.Owner.Id"><icon name="chevron-right" /></a></td>
+                </tr>
+            }
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="8"><div class="empty" style="padding:26px"><div class="empty-title">No owners match</div><div class="empty-text">Try a different search or stage.</div></div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,126 @@
+@model ContractorDetailsViewModel
+@{
+    ViewData["Title"] = Model.Contractor.Name;
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Contractor record</div>
+        <h1 class="page-title">@Model.Contractor.Name</h1>
+        <p class="page-subtitle">@Model.Contractor.Trade · @Model.Contractor.Email · @Model.Contractor.Phone</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-action="Index">← Contractors</a>
+        <a class="btn btn-outline" asp-action="Edit" asp-route-id="@Model.Contractor.Id"><icon name="doc" /> Edit</a>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="wrench" /></div>
+        <div class="stat-label">Active jobs</div>
+        <div class="stat-value">@Model.ActiveJobs.Count</div>
+        <div class="stat-meta">Assigned to this contractor</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="check" /></div>
+        <div class="stat-label">Completed</div>
+        <div class="stat-value">@Model.CompletedJobs.Count</div>
+        <div class="stat-meta">Most recent jobs</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="star" /></div>
+        <div class="stat-label">Rating</div>
+        <div class="stat-value">@Model.Contractor.Rating.ToString("0.0")</div>
+        <div class="stat-meta">From completed work</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.Contractor.Insured ? "sage" : "danger")"><icon name="shield" /></div>
+        <div class="stat-label">Insurance</div>
+        <div class="stat-value small-value">@(Model.Contractor.Insured ? "Insured" : "Not insured")</div>
+        <div class="stat-meta">@(Model.Contractor.Active ? "Active on the panel" : "Inactive")</div>
+    </div>
+</div>
+
+<div class="split section-gap">
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Active jobs</div><div class="card-sub">Urgent first</div></div></div>
+            @if (Model.ActiveJobs.Count == 0)
+            {
+                <div class="empty" style="padding:26px"><div class="empty-title">No active jobs</div><div class="empty-text">This contractor is free to assign.</div></div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table compact">
+                        <thead><tr><th>Job</th><th>Property</th><th>Priority</th><th>Status</th><th class="num">Quote</th></tr></thead>
+                        <tbody>
+                        @foreach (var ticket in Model.ActiveJobs)
+                        {
+                            <tr>
+                                <td><a class="primary-cell" asp-controller="Maintenance" asp-action="Details" asp-route-id="@ticket.Id">@ticket.Title</a><div class="sub-cell">@ticket.Reference · @ticket.CreatedAt.Relative()</div></td>
+                                <td>@ticket.Property?.ShortAddress</td>
+                                <td><span class="badge badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label()</span></td>
+                                <td>@ticket.Status.Label()</td>
+                                <td class="num">@(ticket.QuoteAmount?.Money() ?? "—")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Recent completion history</div><div class="card-sub">Notes and dates</div></div></div>
+            @if (Model.CompletedJobs.Count == 0)
+            {
+                <div class="empty" style="padding:26px"><div class="empty-title">No completed jobs yet</div><div class="empty-text">Completion history will build here.</div></div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table compact">
+                        <thead><tr><th>Job</th><th>Property</th><th>Completed</th><th>Notes</th></tr></thead>
+                        <tbody>
+                        @foreach (var ticket in Model.CompletedJobs)
+                        {
+                            <tr>
+                                <td class="primary-cell">@ticket.Title<div class="sub-cell">@ticket.Reference</div></td>
+                                <td>@ticket.Property?.ShortAddress</td>
+                                <td>@(ticket.CompletedAt?.ShortDate() ?? "—")</td>
+                                <td class="muted">@(ticket.CompletionNotes ?? "—")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Contact</div><div class="card-sub">How to reach them</div></div></div>
+            <div class="card-body">
+                <div class="stack-sm small">
+                    <div class="row between"><span class="muted">Email</span><span>@Model.Contractor.Email</span></div>
+                    <div class="row between"><span class="muted">Phone</span><span>@(Model.Contractor.Phone ?? "—")</span></div>
+                    <div class="row between"><span class="muted">Trade</span><span>@Model.Contractor.Trade</span></div>
+                    <div class="row between"><span class="muted">Insured</span><span>@(Model.Contractor.Insured ? "Yes" : "No")</span></div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Contractor.Notes))
+                {
+                    <div class="divider"></div>
+                    <div class="small muted" style="line-height:1.6">@Model.Contractor.Notes</div>
+                }
+            </div>
+        </div>
+        <div class="ai-panel">
+            <div class="ai-head"><icon name="sparkles" /> Job access</div>
+            <div class="ai-title">Keys, notes, one thread.</div>
+            <div class="ai-text">Access instructions and key movements are recorded against the job and the property. Contractors see what they need, and the office keeps the audit trail.</div>
+            <a class="btn btn-outline btn-block" style="margin-top:14px" asp-controller="Keys" asp-action="Index"><icon name="key" /> Open key vault</a>
+        </div>
+    </div>
+</div>

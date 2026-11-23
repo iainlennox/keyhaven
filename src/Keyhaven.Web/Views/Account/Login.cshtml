@@ -1,0 +1,63 @@
+@model LoginViewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Sign in";
+}
+<h1>Welcome back.</h1>
+<p class="sub">Sign in to the Keyhaven workspace, or step into a demo account below.</p>
+
+<form asp-action="Login" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ReturnUrl" />
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+    <div class="field">
+        <label asp-for="Email">Work email</label>
+        <input asp-for="Email" type="email" autocomplete="username" placeholder="you@agency.co.uk" />
+        <span asp-validation-for="Email" class="field-error"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Password">Password</label>
+        <input asp-for="Password" type="password" autocomplete="current-password" placeholder="••••••••" />
+        <span asp-validation-for="Password" class="field-error"></span>
+    </div>
+    <button class="btn btn-primary btn-block btn-lg" type="submit">Sign in <icon name="arrow-right" /></button>
+</form>
+
+<div class="auth-divider">Or open a demo account</div>
+
+<form asp-action="DemoLogin" method="post">
+    @Html.AntiForgeryToken()
+    <div class="demo-list">
+        <button class="demo-btn" type="submit" name="role" value="@Roles.Admin">
+            <span class="avatar accent">AM</span>
+            <span><span class="demo-btn-name">Alex Morgan</span><br /><span class="demo-btn-role">Agency administrator · full platform</span></span>
+            <icon name="arrow-right" />
+        </button>
+        <button class="demo-btn" type="submit" name="role" value="@Roles.Manager">
+            <span class="avatar">PS</span>
+            <span><span class="demo-btn-name">Priya Shah</span><br /><span class="demo-btn-role">Lettings manager · full workspaces</span></span>
+            <icon name="arrow-right" />
+        </button>
+        <button class="demo-btn" type="submit" name="role" value="@Roles.Landlord">
+            <span class="avatar">JW</span>
+            <span><span class="demo-btn-name">James Whitfield</span><br /><span class="demo-btn-role">Owner · own portfolio only</span></span>
+            <icon name="arrow-right" />
+        </button>
+        <button class="demo-btn" type="submit" name="role" value="@Roles.Tenant">
+            <span class="avatar">SC</span>
+            <span><span class="demo-btn-name">Sarah Connolly</span><br /><span class="demo-btn-role">Tenant · home, rent & repairs</span></span>
+            <icon name="arrow-right" />
+        </button>
+        <button class="demo-btn" type="submit" name="role" value="@Roles.Contractor">
+            <span class="avatar">DK</span>
+            <span><span class="demo-btn-name">Dale Kerr</span><br /><span class="demo-btn-role">Contractor · assigned jobs</span></span>
+            <icon name="arrow-right" />
+        </button>
+    </div>
+    <p class="demo-note">All demo accounts use the password <span class="mono">Demo123!</span>. Data is seeded for demonstration.</p>
+</form>
+
+<div style="margin-top:26px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <a class="small muted" asp-controller="Home" asp-action="Index">← Back to the site</a>
+    <span class="small muted">Need help? <a href="mailto:hello@keyhaven.example" class="accent-text">hello@keyhaven.example</a></span>
+</div>

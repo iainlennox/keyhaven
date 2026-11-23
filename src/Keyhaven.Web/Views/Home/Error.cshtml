@@ -1,0 +1,13 @@
+@{
+    Layout = "_SiteLayout";
+    ViewData["Title"] = "Something went wrong";
+}
+<section class="site-wrap section">
+    <div style="max-width:620px;margin:0 auto;text-align:center">
+        <div class="empty-icon" style="background:var(--danger-soft);color:var(--danger);margin-bottom:18px"><icon name="alert" /></div>
+        <h1 style="font-size:38px">Something went wrong.</h1>
+        <p class="muted" style="margin:12px 0 24px">The request couldn't be completed. In the demo this is usually a stale link after the data has been reset.</p>
+        <a class="btn btn-primary" asp-controller="Dashboard" asp-action="Index">Back to the workspace</a>
+        <a class="btn btn-outline" asp-controller="Home" asp-action="Index">Public site</a>
+    </div>
+</section>

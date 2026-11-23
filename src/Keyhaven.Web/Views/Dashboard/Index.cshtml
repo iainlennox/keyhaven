@@ -1,0 +1,348 @@
+@model StaffDashboardViewModel
+@{
+    ViewData["Title"] = "Overview";
+    var firstName = Model.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? Model.Name;
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    var max = Math.Max(1m, Model.RentHistory.SelectMany(p => new[] { p.Billed, p.Collected }).DefaultIfEmpty(0m).Max());
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">@DateTime.Today.ToString("dddd d MMMM yyyy")</div>
+        <h1 class="page-title">@greeting, @firstName.</h1>
+        <p class="page-subtitle">
+            @if (Model.IsLandlord)
+            {
+                <text>Your portfolio at a glance — rent, compliance and the work in progress.</text>
+            }
+            else
+            {
+                <text>Here's the whole portfolio at a glance. The quiet details are already handled.</text>
+            }
+        </p>
+        <div class="row wrap" style="margin-top:12px">
+            <span class="pill"><icon name="building" /> @Model.PropertyCount properties</span>
+            <span class="pill"><icon name="check" /> @Model.LetCount let</span>
+            <span class="pill"><icon name="home" /> @Model.AvailableCount available</span>
+        </div>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-controller="Maintenance" asp-action="Create"><icon name="wrench" /> Log a repair</a>
+        @if (!Model.IsLandlord)
+        {
+            <a class="btn btn-primary" asp-controller="Inbox" asp-action="Index"><icon name="sparkles" /> AI inbox @if (Model.DraftsWaiting > 0) { <span class="badge badge-accent no-dot" style="margin-left:2px">@Model.DraftsWaiting</span> }</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" asp-controller="Rent" asp-action="Index"><icon name="wallet" /> Rent ledger</a>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="pound" /></div>
+        <div class="stat-label">Monthly rent roll</div>
+        <div class="stat-value">@Model.MonthlyRentRoll.Money()</div>
+        <div class="stat-meta">Across @Model.ActiveTenancies active tenancies</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="wallet" /></div>
+        <div class="stat-label">Collected this month</div>
+        <div class="stat-value">@Model.CollectedThisMonth.Money()</div>
+        <div class="stat-meta"><span class="up">@Model.CollectedPercent%</span> of @Model.DueThisMonth.Money() billed</div>
+        <div class="progress" style="margin-top:9px"><div class="progress-bar" style="width:@Model.CollectedPercent%"></div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.ArrearsTotal > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Arrears</div>
+        <div class="stat-value" style="@(Model.ArrearsTotal > 0 ? "color:var(--danger)" : "")">@Model.ArrearsTotal.Money()</div>
+        <div class="stat-meta">@Model.Arrears.Count tenanc@(Model.Arrears.Count == 1 ? "y" : "ies") with a balance</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="shield" /></div>
+        <div class="stat-label">Compliance score</div>
+        <div class="stat-value">@Model.ComplianceScore%</div>
+        <div class="stat-meta">@Model.ComplianceActions action@(Model.ComplianceActions == 1 ? "" : "s") needed</div>
+        <div class="progress" style="margin-top:9px"><div class="progress-bar @(Model.ComplianceScore < 80 ? "danger" : "")" style="width:@Model.ComplianceScore%"></div></div>
+    </div>
+</div>
+
+<div class="split section-gap">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Rent collection</div>
+                <div class="card-sub">Billed against collected, last six months</div>
+            </div>
+            <div class="chart-legend">
+                <span><i class="legend-dot billed"></i> Billed</span>
+                <span><i class="legend-dot"></i> Collected</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart">
+                @foreach (var point in Model.RentHistory)
+                {
+                    var billedHeight = (int)Math.Round(point.Billed / max * 100);
+                    var collectedHeight = (int)Math.Round(point.Collected / max * 100);
+                    <div class="chart-col">
+                        <div class="chart-bars">
+                            <div class="chart-bar billed" style="height:@Math.Max(2, billedHeight)%" title="Billed @point.Billed.Money()"></div>
+                            <div class="chart-bar collected @(point.Collected < point.Billed * 0.9m ? "low" : "")" style="height:@Math.Max(2, collectedHeight)%" title="Collected @point.Collected.Money()"></div>
+                        </div>
+                        <div class="chart-label">@point.Label</div>
+                    </div>
+                }
+            </div>
+            <div class="divider"></div>
+            <div class="row between wrap">
+                <div class="small muted">This month: <strong style="color:var(--ink)">@Model.CollectedThisMonth.Money()</strong> of @Model.DueThisMonth.Money() billed</div>
+                <a class="link-arrow" asp-controller="Rent" asp-action="Index">Open rent ledger <icon name="arrow-right" /></a>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.IsLandlord)
+    {
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">AI inbox</div>
+                    <div class="card-sub">Record-grounded replies & drafts</div>
+                </div>
+                <span class="badge badge-accent">@Model.DraftsWaiting waiting</span>
+            </div>
+            <div class="card-body">
+                <div class="ai-panel" style="margin-bottom:14px">
+                    <div class="ai-head"><icon name="sparkles" /> Assistant at work</div>
+                    <div class="ai-text">
+                        @if (Model.AutoRepliedToday > 0)
+                        {
+                            <text>@Model.AutoRepliedToday routine repl@(Model.AutoRepliedToday == 1 ? "y was" : "ies were") sent from a supporting record today. @Model.DraftsWaiting message@(Model.DraftsWaiting == 1 ? "" : "s") need a person.</text>
+                        }
+                        else
+                        {
+                            <text>@Model.DraftsWaiting message@(Model.DraftsWaiting == 1 ? "" : "s") are waiting for review. Each draft shows the records it was built from.</text>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.InboxNeedsAttention.Count == 0)
+                {
+                    <div class="empty" style="padding:18px">
+                        <div class="empty-title">Inbox clear</div>
+                        <div class="empty-text">No messages waiting for review.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="list">
+                        @foreach (var message in Model.InboxNeedsAttention.Take(3))
+                        {
+                            <a class="list-row" asp-controller="Inbox" asp-action="Details" asp-route-id="@message.Id">
+                                <div class="list-body">
+                                    <div class="row between">
+                                        <span class="list-title">@message.FromName</span>
+                                        <span class="badge badge-@message.Category.Tone()">@message.Category.Label()</span>
+                                    </div>
+                                    <div class="list-sub">@message.Subject</div>
+                                    <div class="tiny muted" style="margin-top:4px">@message.ReceivedAt.Relative() · @message.Status.Label()</div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                <a class="btn btn-outline btn-block" style="margin-top:14px" asp-controller="Inbox" asp-action="Index"><icon name="inbox" /> Review the inbox</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Owner snapshot</div>
+                    <div class="card-sub">Your managed portfolio</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="meta-grid">
+                    <div class="meta-item"><div class="meta-label">Properties</div><div class="meta-value">@Model.PropertyCount</div><div class="meta-sub">@Model.LetCount let · @Model.AvailableCount available</div></div>
+                    <div class="meta-item"><div class="meta-label">Tenancies</div><div class="meta-value">@Model.ActiveTenancies</div><div class="meta-sub">active agreements</div></div>
+                    <div class="meta-item"><div class="meta-label">Rent roll</div><div class="meta-value">@Model.MonthlyRentRoll.Money()</div><div class="meta-sub">per calendar month</div></div>
+                    <div class="meta-item"><div class="meta-label">Collected</div><div class="meta-value">@Model.CollectedThisMonth.Money()</div><div class="meta-sub">this month</div></div>
+                </div>
+                <div class="divider"></div>
+                <a class="btn btn-outline btn-block" asp-controller="Properties" asp-action="Index"><icon name="building" /> View my properties</a>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="split section-gap">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Compliance watchlist</div>
+                <div class="card-sub">Certificates that need action</div>
+            </div>
+            <a class="link-arrow" asp-controller="Compliance" asp-action="Index">All certificates <icon name="arrow-right" /></a>
+        </div>
+        @if (Model.ComplianceWatch.Count == 0)
+        {
+            <div class="empty"><div class="empty-icon"><icon name="shield" /></div><div class="empty-title">All in order</div><div class="empty-text">No certificates need attention in the next 60 days.</div></div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table compact">
+                    <thead><tr><th>Property</th><th>Certificate</th><th>Expiry</th><th>Status</th></tr></thead>
+                    <tbody>
+                    @foreach (var row in Model.ComplianceWatch)
+                    {
+                        <tr>
+                            <td><a class="primary-cell" asp-controller="Properties" asp-action="Details" asp-route-id="@row.Property.Id">@row.Property.Reference</a><div class="sub-cell">@row.Property.ShortAddress</div></td>
+                            <td>@row.Type.Label()</td>
+                            <td>
+                                @if (row.Certificate is null)
+                                {
+                                    <span class="muted">Not recorded</span>
+                                }
+                                else
+                                {
+                                    <span>@row.Certificate.ExpiresOn.ShortDate()</span>
+                                    <div class="sub-cell">@(row.DaysUntilExpiry < 0 ? $"{Math.Abs(row.DaysUntilExpiry)} days ago" : $"in {row.DaysUntilExpiry} days")</div>
+                                }
+                            </td>
+                            <td><span class="badge badge-@row.State.Tone()">@row.State.Label()</span></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Arrears</div>
+                <div class="card-sub">Balances to keep an eye on</div>
+            </div>
+            <a class="link-arrow" asp-controller="Rent" asp-action="Index" asp-route-filter="arrears">Ledger <icon name="arrow-right" /></a>
+        </div>
+        @if (Model.Arrears.Count == 0)
+        {
+            <div class="empty"><div class="empty-icon"><icon name="check" /></div><div class="empty-title">Rent is up to date</div><div class="empty-text">No outstanding balances across the portfolio.</div></div>
+        }
+        else
+        {
+            <div class="card-body">
+                <div class="list">
+                    @foreach (var row in Model.Arrears)
+                    {
+                        <a class="list-row" asp-controller="Tenancies" asp-action="Details" asp-route-id="@row.Tenancy.Id">
+                            <div class="list-icon" style="background:var(--danger-soft);color:var(--danger)"><icon name="alert" /></div>
+                            <div class="list-body">
+                                <div class="row between"><span class="list-title">@row.Tenancy.Tenant?.FullName</span><span class="strong danger-text">@row.Outstanding.Money()</span></div>
+                                <div class="list-sub">@row.Tenancy.Property?.Reference · @row.DaysOverdue days overdue</div>
+                            </div>
+                        </a>
+                    }
+                </div>
+                <div class="callout warning" style="margin-top:12px">
+                    <icon name="sparkles" />
+                    <div>Chaser drafts can be produced from the rent ledger and logged to the CRM timeline.</div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="split section-gap">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Open repairs</div>
+                <div class="card-sub">Triaged and in flight</div>
+            </div>
+            <a class="link-arrow" asp-controller="Maintenance" asp-action="Index">All jobs <icon name="arrow-right" /></a>
+        </div>
+        @if (Model.RecentTickets.Count == 0)
+        {
+            <div class="empty"><div class="empty-icon"><icon name="wrench" /></div><div class="empty-title">No open repairs</div><div class="empty-text">Every reported issue has been completed.</div></div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table compact">
+                    <thead><tr><th>Job</th><th>Property</th><th>Priority</th><th>Status</th></tr></thead>
+                    <tbody>
+                    @foreach (var ticket in Model.RecentTickets)
+                    {
+                        <tr>
+                            <td><a class="primary-cell" asp-controller="Maintenance" asp-action="Details" asp-route-id="@ticket.Id">@ticket.Title</a><div class="sub-cell">@ticket.Reference · @ticket.CreatedAt.Relative()</div></td>
+                            <td>@ticket.Property?.Reference<div class="sub-cell">@ticket.Property?.ShortAddress</div></td>
+                            <td><span class="badge badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label()</span></td>
+                            <td>@ticket.Status.Label()</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header">
+                <div><div class="card-title">Upcoming viewings</div><div class="card-sub">Next in the diary</div></div>
+                <a class="link-arrow" asp-controller="Viewings" asp-action="Index">Diary <icon name="arrow-right" /></a>
+            </div>
+            <div class="card-body">
+                @if (Model.UpcomingViewings.Count == 0)
+                {
+                    <div class="empty" style="padding:14px"><div class="empty-title">No viewings booked</div><div class="empty-text">The diary is clear for now.</div></div>
+                }
+                else
+                {
+                    <div class="list">
+                        @foreach (var viewing in Model.UpcomingViewings)
+                        {
+                            <div class="list-row">
+                                <div class="list-icon"><icon name="calendar" /></div>
+                                <div class="list-body">
+                                    <div class="row between"><span class="list-title">@viewing.ApplicantName</span><span class="small muted">@viewing.ScheduledAt.ToString("ddd d MMM")</span></div>
+                                    <div class="list-sub">@viewing.Property?.ShortAddress · @viewing.ScheduledAt.TimeLabel()</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div><div class="card-title">Recent activity</div><div class="card-sub">Across the portfolio</div></div>
+                <a class="link-arrow" asp-controller="Contacts" asp-action="Index">CRM <icon name="arrow-right" /></a>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    @foreach (var note in Model.RecentActivity.Take(4))
+                    {
+                        <div class="timeline-item">
+                            <span class="timeline-dot @(note.ContactType == ContactType.Owner ? "accent" : note.IsFollowUp ? "sage" : "")"></span>
+                            <div class="timeline-head">
+                                <span class="timeline-title">@note.ContactName</span>
+                                <span class="timeline-time">@note.OccurredAt.Relative()</span>
+                            </div>
+                            <div class="timeline-text">@note.Summary</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,186 @@
+@model RentIndexViewModel
+@{
+    ViewData["Title"] = "Rent & arrears";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var isTenant = User.IsInRole(Roles.Tenant);
+    var filters = new (string Key, string Label, int? Count)[]
+    {
+        ("all", "All charges", null),
+        ("arrears", "Arrears", null),
+        ("overdue", "Overdue", null),
+        ("due", "Due", null),
+        ("paid", "Paid", null),
+        ("unreconciled", "Unreconciled", null)
+    };
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Client money</div>
+        <h1 class="page-title">@(isTenant ? "My payments." : "Rent & arrears.")</h1>
+        <p class="page-subtitle">
+            @if (isTenant)
+            {
+                <text>Your rent schedule, payments received and anything still outstanding.</text>
+            }
+            else
+            {
+                <text>Billed, collected and reconciled — with arrears ageing and chaser drafts built from the ledger.</text>
+            }
+        </p>
+    </div>
+    <div class="page-actions">
+        @if (isStaff)
+        {
+            <a class="btn btn-outline" asp-controller="Tenancies" asp-action="Index"><icon name="doc" /> Tenancies</a>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon"><icon name="pound" /></div>
+        <div class="stat-label">Billed this month</div>
+        <div class="stat-value">@Model.BilledThisMonth.Money()</div>
+        <div class="stat-meta">Due on the 1st</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="check" /></div>
+        <div class="stat-label">Collected this month</div>
+        <div class="stat-value">@Model.CollectedThisMonth.Money()</div>
+        <div class="stat-meta">@(Model.BilledThisMonth > 0 ? $"{(int)Math.Round(Model.CollectedThisMonth / Model.BilledThisMonth * 100)}% of billed" : "No charges yet")</div>
+        <div class="progress" style="margin-top:9px"><div class="progress-bar" style="width:@(Model.BilledThisMonth > 0 ? (int)Math.Round(Model.CollectedThisMonth / Model.BilledThisMonth * 100) : 100)%"></div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.TotalOutstanding > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Total outstanding</div>
+        <div class="stat-value" style="@(Model.TotalOutstanding > 0 ? "color:var(--danger)" : "")">@Model.TotalOutstanding.Money()</div>
+        <div class="stat-meta">@Model.Arrears.TenanciesInArrears tenanc@(Model.Arrears.TenanciesInArrears == 1 ? "y" : "ies") in arrears</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="clock" /></div>
+        <div class="stat-label">Over 60 days</div>
+        <div class="stat-value">@Model.Arrears.Bucket60Plus.Money()</div>
+        <div class="stat-meta">Oldest balances</div>
+    </div>
+</div>
+
+<div class="grid-3 section-gap">
+    <div class="panel">
+        <div class="kicker">0–30 days</div>
+        <div style="font-family:var(--serif);font-size:22px;margin-top:4px">@Model.Arrears.Bucket0To30.Money()</div>
+    </div>
+    <div class="panel">
+        <div class="kicker">31–60 days</div>
+        <div style="font-family:var(--serif);font-size:22px;margin-top:4px">@Model.Arrears.Bucket31To60.Money()</div>
+    </div>
+    <div class="panel">
+        <div class="kicker">60+ days</div>
+        <div style="font-family:var(--serif);font-size:22px;margin-top:4px;color:@(Model.Arrears.Bucket60Plus > 0 ? "var(--danger)" : "inherit")">@Model.Arrears.Bucket60Plus.Money()</div>
+    </div>
+</div>
+
+<div class="row between wrap section-gap" style="margin-bottom:14px">
+    <div class="segmented">
+        @foreach (var filter in filters)
+        {
+            <a class="@(Model.Filter == filter.Key ? "active" : "")" asp-action="Index" asp-route-filter="@filter.Key" asp-route-q="@Model.Query">@filter.Label</a>
+        }
+    </div>
+    <form method="get" asp-action="Index" class="row" style="gap:8px">
+        <input type="hidden" name="filter" value="@Model.Filter" />
+        <div class="search" style="position:relative">
+            <icon name="search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted)" />
+            <input type="search" name="q" value="@Model.Query" placeholder="Tenant, property, bank ref…" style="padding-left:32px;min-width:230px" />
+        </div>
+        <button class="btn btn-outline btn-sm" type="submit">Search</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Tenant & property</th><th>Period</th><th>Due</th><th class="num">Amount</th><th class="num">Paid</th><th class="num">Balance</th><th>Reconciliation</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var charge in Model.Charges)
+            {
+                var overdue = charge.IsOverdue(today);
+                <tr class="@(overdue ? "row-danger" : "")">
+                    <td>
+                        <a class="primary-cell" asp-controller="Tenancies" asp-action="Details" asp-route-id="@charge.TenancyId">@charge.Tenancy?.Tenant?.FullName</a>
+                        <div class="sub-cell">@charge.Tenancy?.Property?.Reference · @charge.Tenancy?.Property?.ShortAddress</div>
+                    </td>
+                    <td>@charge.PeriodStart.ToString("MMM yyyy")<div class="sub-cell">@charge.BankReference</div></td>
+                    <td>@charge.DueDate.ShortDate()</td>
+                    <td class="num">@charge.Amount.Money()</td>
+                    <td class="num">@charge.AmountPaid.Money()</td>
+                    <td class="num @(charge.Outstanding > 0 ? "danger-text" : "")">@charge.Outstanding.Money()</td>
+                    <td>
+                        @if (charge.IsFullyPaid)
+                        {
+                            <span class="badge badge-positive">Paid</span>
+                        }
+                        else if (overdue)
+                        {
+                            <span class="badge badge-danger">Overdue</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warning">Due</span>
+                        }
+                        <div class="sub-cell">@charge.Reconciliation.Label()</div>
+                    </td>
+                    <td class="text-right">
+                        @if (isStaff)
+                        {
+                            <div class="row" style="justify-content:flex-end;gap:5px">
+                                <details class="details-pop">
+                                    <summary class="btn btn-outline btn-sm">Payment</summary>
+                                    <div class="pop-panel" style="width:250px;position:absolute;right:0;z-index:20;text-align:left">
+                                        <form asp-action="RecordPayment" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="ChargeId" value="@charge.Id" />
+                                            <div class="field"><label>Amount (£)</label><input name="Amount" type="number" step="0.01" min="0.01" value="@charge.Outstanding.ToString("0.00")" /></div>
+                                            <div class="field"><label>Paid on</label><input name="PaidOn" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+                                            <div class="field"><label>Bank reference</label><input name="BankReference" value="@charge.BankReference" /></div>
+                                            <button class="btn btn-primary btn-sm" type="submit">Record payment</button>
+                                        </form>
+                                    </div>
+                                </details>
+                                @if (charge.Outstanding > 0)
+                                {
+                                    <form asp-action="SendChaser" method="post" style="margin:0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@charge.Id" />
+                                        <button class="btn btn-ghost btn-sm" type="submit" title="Prepare a chaser"><icon name="mail" /></button>
+                                    </form>
+                                }
+                                @if (charge.Reconciliation == RentReconciliation.Unreconciled && charge.AmountPaid > 0)
+                                {
+                                    <form asp-action="Reconcile" method="post" style="margin:0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@charge.Id" />
+                                        <button class="btn btn-ghost btn-sm" type="submit" title="Reconcile"><icon name="check" /></button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Charges.Count == 0)
+            {
+                <tr><td colspan="8"><div class="empty" style="padding:26px"><div class="empty-title">No charges match</div><div class="empty-text">Try a different filter or search.</div></div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (isStaff)
+{
+    <div class="callout info section-gap">
+        <icon name="sparkles" />
+        <div>Chaser drafts are grounded in the tenant's schedule and logged to the CRM timeline. Use the mail icon on any unpaid charge to prepare one.</div>
+    </div>
+}

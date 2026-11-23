@@ -1,0 +1,84 @@
+@model EnquiriesIndexViewModel
+@{
+    ViewData["Title"] = "Enquiries";
+    var open = Model.Enquiries.Count(e => e.Status == EnquiryStatus.New);
+    var converted = Model.Enquiries.Count(e => e.Status == EnquiryStatus.Converted);
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Lettings</div>
+        <h1 class="page-title">Enquiries.</h1>
+        <p class="page-subtitle">Every first response, from every channel, attached to the property it belongs to.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-controller="Inbox" asp-action="Compose"><icon name="mail" /> Simulate an email</a>
+        <a class="btn btn-primary" asp-controller="Viewings" asp-action="Create"><icon name="calendar" /> Book a viewing</a>
+    </div>
+</div>
+
+<div class="row between wrap section-gap" style="margin-bottom:14px">
+    <div class="segmented">
+        <a class="@(Model.Filter == "open" ? "active" : "")" asp-action="Index" asp-route-filter="open">Open@if (open > 0) { <span class="count">@open</span> }</a>
+        <a class="@(Model.Filter == "converted" ? "active" : "")" asp-action="Index" asp-route-filter="converted">Converted</a>
+        <a class="@(Model.Filter == "all" ? "active" : "")" asp-action="Index" asp-route-filter="all">All</a>
+    </div>
+    <span class="small muted">@Model.Enquiries.Count enquir@(Model.Enquiries.Count == 1 ? "y" : "ies") in this view</span>
+</div>
+
+<div class="stack-md">
+    @if (Model.Enquiries.Count == 0)
+    {
+        <div class="card"><div class="empty"><div class="empty-icon"><icon name="inbox" /></div><div class="empty-title">No enquiries here</div><div class="empty-text">Enquiries from the website, portals and email land here.</div></div></div>
+    }
+    else
+    {
+        @foreach (var enquiry in Model.Enquiries)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="row between wrap" style="align-items:flex-start;gap:14px">
+                        <div class="row" style="align-items:flex-start;gap:12px;flex:1;min-width:260px">
+                            <span class="avatar">@(enquiry.Name.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                            <div style="flex:1">
+                                <div class="row wrap" style="gap:8px">
+                                    <span style="font-weight:650">@enquiry.Name</span>
+                                    <span class="badge badge-@enquiry.Source.Tone()">@enquiry.Source.Label()</span>
+                                    <span class="badge badge-@enquiry.Status.Tone()">@enquiry.Status.Label()</span>
+                                </div>
+                                <div class="small muted">@enquiry.Email @(string.IsNullOrWhiteSpace(enquiry.Phone) ? "" : $"· {enquiry.Phone}") · @enquiry.ReceivedAt.Relative()</div>
+                                <p class="small" style="margin-top:8px;line-height:1.6;max-width:70ch">@enquiry.Message</p>
+                                @if (enquiry.Property is not null)
+                                {
+                                    <a class="pill" style="margin-top:8px" asp-controller="Properties" asp-action="Details" asp-route-id="@enquiry.Property.Id"><icon name="building" /> @enquiry.Property.Reference · @enquiry.Property.ShortAddress · @enquiry.Property.MonthlyRent.Money() pcm</a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(enquiry.Notes))
+                                {
+                                    <div class="tiny muted" style="margin-top:6px">Note: @enquiry.Notes</div>
+                                }
+                            </div>
+                        </div>
+                        <div class="row wrap" style="gap:6px;justify-content:flex-end">
+                            @if (enquiry.PropertyId is not null)
+                            {
+                                <a class="btn btn-primary btn-sm" asp-action="Convert" asp-route-id="@enquiry.Id"><icon name="calendar" /> Convert to viewing</a>
+                            }
+                            @if (enquiry.Status == EnquiryStatus.New)
+                            {
+                                <form asp-action="MarkReplied" method="post" style="margin:0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@enquiry.Id" />
+                                    <button class="btn btn-outline btn-sm" type="submit">Mark replied</button>
+                                </form>
+                            }
+                            <form asp-action="Close" method="post" style="margin:0">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@enquiry.Id" />
+                                <button class="btn btn-ghost btn-sm" type="submit" title="Close"><icon name="x" /></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

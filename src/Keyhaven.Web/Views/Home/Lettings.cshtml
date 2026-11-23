@@ -1,0 +1,251 @@
+@{
+    Layout = "_SiteLayout";
+    ViewData["Title"] = "Lettings, connected";
+}
+<section class="site-wrap" style="padding-top:64px;padding-bottom:32px">
+    <div style="max-width:820px">
+        <div class="eyebrow">Lettings, connected</div>
+        <h1 style="font-family:var(--serif);font-size:clamp(42px,5vw,66px);line-height:1.04;letter-spacing:-.035em;font-weight:500">Your whole portfolio,<br /><em style="color:var(--accent)">working together.</em></h1>
+        <p class="lead" style="font-size:16px;color:var(--ink-3);line-height:1.65;margin-top:20px;max-width:62ch">
+            Nine connected ways of working, built around the real pace and responsibility of UK property management.
+            One source of truth, less handover, and more headroom for the work that needs a person.
+        </p>
+        <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Login">Explore the live demo</a>
+            <a class="btn btn-outline btn-lg" asp-controller="Home" asp-action="Index" asp-fragment="ai">See the AI inbox</a>
+        </div>
+    </div>
+</section>
+
+<div class="site-wrap" style="padding-bottom:30px">
+    <div class="trust-strip">
+        <span>Every record connected</span>
+        <span>UK compliance built in</span>
+        <span>Client money, clearly reconciled</span>
+        <span>Grounded AI, not guesswork</span>
+    </div>
+</div>
+
+<section class="site-wrap" style="padding-bottom:20px">
+    <div class="section-head" style="margin-bottom:8px">
+        <div class="kicker">The workflow list</div>
+        <h2 style="margin-top:10px">The details are where <em>the calm begins.</em></h2>
+    </div>
+
+    <div class="workflow-detail" id="owner-onboarding">
+        <div class="num">01</div>
+        <div>
+            <h3>Owner onboarding</h3>
+            <p class="desc">Start every relationship on solid ground. Guide a new owner from first conversation to signed agreement and a portfolio that is ready to manage.</p>
+        </div>
+        <ul>
+            <li>Digital agreement status</li>
+            <li>Management terms & fees</li>
+            <li>Portfolio setup checklist</li>
+            <li>Owner portal access</li>
+            <li>Onboarding stage tracking</li>
+            <li>Contact timeline</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="property-marketing">
+        <div class="num">02</div>
+        <div>
+            <h3>Property marketing</h3>
+            <p class="desc">From first photograph to fully live listing. Keep photos, descriptions, rent and availability in step across every channel you use.</p>
+        </div>
+        <ul>
+            <li>Marketing headline & summary</li>
+            <li>Publication status</li>
+            <li>Channel tracking</li>
+            <li>Availability & listing date</li>
+            <li>EPC rating on record</li>
+            <li>Enquiry capture</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="enquiries-viewings">
+        <div class="num">03</div>
+        <div>
+            <h3>Enquiries & viewings</h3>
+            <p class="desc">A better first response, every time. Capture the enquiry, move promising applicants through pre-screening and keep the diary in sync.</p>
+        </div>
+        <ul>
+            <li>Enquiry register by source</li>
+            <li>Pre-screening status</li>
+            <li>Viewing diary</li>
+            <li>Confirmation & reminders</li>
+            <li>Viewing feedback</li>
+            <li>Conversion to tenancy</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="tenant-onboarding">
+        <div class="num">04</div>
+        <div>
+            <h3>Tenant onboarding</h3>
+            <p class="desc">Make moving in feel effortless. Referencing, Right to Rent, deposit registration and the tenancy record come together in one guided handover.</p>
+        </div>
+        <ul>
+            <li>Referencing status</li>
+            <li>Right to Rent checks</li>
+            <li>Deposit scheme & date</li>
+            <li>Tenancy dates & rent</li>
+            <li>Deposit protection record</li>
+            <li>Tenant portal access</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="client-money">
+        <div class="num">05</div>
+        <div>
+            <h3>Client money</h3>
+            <p class="desc">The month-end that takes care of itself. Schedule rent, reconcile bank activity and see exactly who is behind before it becomes a problem.</p>
+        </div>
+        <ul>
+            <li>Rent schedules</li>
+            <li>Bank references</li>
+            <li>Payment reconciliation</li>
+            <li>Arrears ageing</li>
+            <li>Chaser drafts</li>
+            <li>Owner statements</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="repairs">
+        <div class="num">06</div>
+        <div>
+            <h3>Repairs</h3>
+            <p class="desc">Every repair gets the right attention. Tenants report from their portal, AI triage reads the urgency, and the job moves from quote to completion in one thread.</p>
+        </div>
+        <ul>
+            <li>Tenant repair reporting</li>
+            <li>AI urgency triage</li>
+            <li>Contractor quotes</li>
+            <li>Owner approval</li>
+            <li>Access instructions</li>
+            <li>Completion notes</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="compliance">
+        <div class="num">07</div>
+        <div>
+            <h3>Certificates & compliance</h3>
+            <p class="desc">Compliance that follows through. Track Gas Safety, EPC, EICR and HMO licensing across the portfolio, and assign renewals before they lapse.</p>
+        </div>
+        <ul>
+            <li>Certificate register</li>
+            <li>Expiry watchlist</li>
+            <li>Portfolio compliance score</li>
+            <li>Renewal contractor</li>
+            <li>Booking dates</li>
+            <li>Property-level gaps</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="key-vault">
+        <div class="num">08</div>
+        <div>
+            <h3>Key vault</h3>
+            <p class="desc">Know where every key is. Record who checked it out, when, why and when it came back — with overdue returns visible at a glance.</p>
+        </div>
+        <ul>
+            <li>House keys & fobs</li>
+            <li>Serial numbers</li>
+            <li>Checkout reasons</li>
+            <li>Due-back dates</li>
+            <li>Overdue alerts</li>
+            <li>Check-in history</li>
+        </ul>
+    </div>
+
+    <div class="workflow-detail" id="crm-relationships">
+        <div class="num">09</div>
+        <div>
+            <h3>CRM & relationships</h3>
+            <p class="desc">Remember the relationship, not just the record. Keep every conversation connected to the right owner, tenant, contractor or applicant.</p>
+        </div>
+        <ul>
+            <li>Contact timeline</li>
+            <li>Follow-up dates</li>
+            <li>Property-linked notes</li>
+            <li>Owner conversations</li>
+            <li>Contractor history</li>
+            <li>Applicant feedback</li>
+        </ul>
+    </div>
+</section>
+
+<section class="section section-cream" style="margin-top:40px">
+    <div class="site-wrap">
+        <div class="section-head">
+            <div class="kicker">Email, answered from the record</div>
+            <h2 style="margin-top:10px">Routine replies. <em>Grounded drafts.</em> Nothing invented.</h2>
+            <p>Every message is classified, linked to the record that can answer it, and handled according to how much judgement it needs.</p>
+        </div>
+        <div class="example-stack">
+            <div class="email-example">
+                <div class="incoming">
+                    <h4>Tenant · repair update</h4>
+                    <div class="email-subject">Any news on the kitchen tap?</div>
+                    <div class="email-text">Just checking whether there's an update on the leaking kitchen tap. It's still dripping into the bowl.</div>
+                    <div class="record-line"><icon name="wrench" /> Contractor assigned · appointment not recorded</div>
+                </div>
+                <div class="outgoing">
+                    <div class="email-tag"><icon name="eye" /> AI-drafted reply</div>
+                    <div class="email-subject">Re: Any news on the kitchen tap?</div>
+                    <div class="email-text">A contractor has been assigned to the repair. I can't see an appointment time recorded yet, so I'll ask the team to confirm one with you.</div>
+                    <div class="record-line"><icon name="sparkles" /> Drafted · no appointment promised</div>
+                </div>
+            </div>
+            <div class="email-example">
+                <div class="incoming">
+                    <h4>Contractor · access</h4>
+                    <div class="email-subject">Access details for Thursday</div>
+                    <div class="email-text">Can you confirm the access arrangements for 12 Clarence Drive? I can attend Thursday morning.</div>
+                    <div class="record-line"><icon name="lock" /> Access instructions recorded: collect keys from the agency office</div>
+                </div>
+                <div class="outgoing">
+                    <div class="email-tag auto"><icon name="check" /> Automated reply</div>
+                    <div class="email-subject">Re: Access details for Thursday</div>
+                    <div class="email-text">The job record says to collect the keys from the agency office. Please let us know if you need anything else before attending.</div>
+                    <div class="record-line"><icon name="sparkles" /> Sent automatically · access instruction quoted from the job</div>
+                </div>
+            </div>
+            <div class="email-example">
+                <div class="incoming">
+                    <h4>Owner · statement</h4>
+                    <div class="email-subject">Could you send the latest statement?</div>
+                    <div class="email-text">Could you send me the statement for the last quarter when you get a chance?</div>
+                    <div class="record-line"><icon name="doc" /> Owner record: statement available for the last complete quarter</div>
+                </div>
+                <div class="outgoing">
+                    <div class="email-tag"><icon name="eye" /> AI-drafted reply</div>
+                    <div class="email-subject">Re: Statement for the last quarter</div>
+                    <div class="email-text">The owner record shows a statement is available for 1 July to 30 September. Is that the quarter you had in mind?</div>
+                    <div class="record-line"><icon name="sparkles" /> Drafted · period taken from the ledger</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="site-wrap section tight">
+    <div class="cta-band">
+        <div>
+            <h2>Built for the British letting environment.</h2>
+            <p>Section 21s, HMO licensing, Right to Rent, deposit schemes. The demo includes all of it, with real records to explore.</p>
+            <div class="row wrap" style="margin-top:18px">
+                <span class="pill" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#e9eee9">Gas Safety · EPC · EICR</span>
+                <span class="pill" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#e9eee9">Right to Rent</span>
+                <span class="pill" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#e9eee9">HMO licensing</span>
+                <span class="pill" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#e9eee9">Deposit protection</span>
+            </div>
+        </div>
+        <div class="row wrap">
+            <a class="btn btn-accent btn-lg" asp-controller="Account" asp-action="Login">Open the demo <icon name="arrow-right" /></a>
+            <a class="btn btn-outline btn-lg" href="mailto:hello@keyhaven.example" style="border-color:rgba(255,255,255,.3);color:#fff">Talk to us</a>
+        </div>
+    </div>
+</section>

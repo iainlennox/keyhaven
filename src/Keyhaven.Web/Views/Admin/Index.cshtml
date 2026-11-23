@@ -1,0 +1,94 @@
+@{
+    ViewData["Title"] = "Platform settings";
+    var users = ViewBag.Users as List<AppUser> ?? new List<AppUser>();
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Admin</div>
+        <h1 class="page-title">Platform settings.</h1>
+        <p class="page-subtitle">Demo administration, seeded data and the accounts that can sign in.</p>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon"><icon name="building" /></div>
+        <div class="stat-label">Properties</div>
+        <div class="stat-value">@ViewBag.PropertyCount</div>
+        <div class="stat-meta">In the demo portfolio</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="doc" /></div>
+        <div class="stat-label">Tenancies</div>
+        <div class="stat-value">@ViewBag.TenancyCount</div>
+        <div class="stat-meta">Active and historical</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="shield" /></div>
+        <div class="stat-label">Certificates</div>
+        <div class="stat-value">@ViewBag.CertificateCount</div>
+        <div class="stat-meta">Across the register</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="mail" /></div>
+        <div class="stat-label">Inbox messages</div>
+        <div class="stat-value">@ViewBag.MessageCount</div>
+        <div class="stat-meta">Analysed at startup</div>
+    </div>
+</div>
+
+<div class="split section-gap">
+    <div class="card">
+        <div class="card-header"><div><div class="card-title">Demo accounts</div><div class="card-sub">Roles and linked records</div></div></div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Linked record</th></tr></thead>
+                <tbody>
+                @foreach (var user in users)
+                {
+                    <tr>
+                        <td class="primary-cell">@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td><span class="badge badge-@(user.Role == Roles.Admin ? "accent" : user.Role == Roles.Manager ? "info" : "muted")">@user.Role</span></td>
+                        <td>@(user.LinkedEntityId is null ? "—" : $"#{user.LinkedEntityId}")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer">
+            <span class="small muted">All demo accounts use the password <span class="mono">Demo123!</span></span>
+        </div>
+    </div>
+
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Rebuild demo data</div><div class="card-sub">Reset to the original seed</div></div></div>
+            <div class="card-body">
+                <div class="callout warning">
+                    <icon name="alert" />
+                    <div>This deletes every change made in the demo — properties, tenancies, payments, messages — and re-seeds the original portfolio. It does not affect your sign-in.</div>
+                </div>
+                <form asp-action="ResetDemo" method="post" style="margin-top:14px" data-confirm="Delete all demo data and rebuild the original seed?">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-danger btn-block" type="submit"><icon name="refresh" /> Reset the demo</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">About this build</div><div class="card-sub">Demonstration platform</div></div></div>
+            <div class="card-body">
+                <div class="stack-sm small">
+                    <div class="row between"><span class="muted">Framework</span><span>ASP.NET Core MVC</span></div>
+                    <div class="row between"><span class="muted">Runtime</span><span>.NET 10</span></div>
+                    <div class="row between"><span class="muted">Data</span><span>EF Core · SQLite</span></div>
+                    <div class="row between"><span class="muted">Auth</span><span>Cookie · role-based</span></div>
+                    <div class="row between"><span class="muted">AI</span><span>Deterministic record-grounded rules</span></div>
+                </div>
+                <div class="divider"></div>
+                <div class="tiny muted" style="line-height:1.6">The assistant is implemented as a transparent rules engine over the property, tenancy, repair, rent and owner records. It does not call an external model, so every decision can be inspected.</div>
+            </div>
+        </div>
+    </div>
+</div>

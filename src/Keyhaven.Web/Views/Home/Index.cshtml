@@ -1,0 +1,227 @@
+﻿@model HomeViewModel
+@{
+    Layout = "_SiteLayout";
+    ViewData["Title"] = "The connected property platform";
+}
+<section class="site-wrap site-hero">
+    <div>
+        <div class="eyebrow">AI-assisted software for letting agencies</div>
+        <h1>Less admin.<br /><em>More letting.</em></h1>
+        <p class="lead">
+            Keyhaven brings the portfolio, the paperwork and every conversation into one calm workspace.
+            Our assistant reads the record before it writes a word — so routine replies are grounded, and the ones that need judgement stay with your team.
+        </p>
+        <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Login">Explore the live demo <icon name="arrow-right" /></a>
+            <a class="btn btn-outline btn-lg" asp-controller="Home" asp-action="Lettings">See the lettings workflow</a>
+        </div>
+        <div class="hero-note"><icon name="check" /> Record-grounded AI · UK compliance built in · One connected portfolio</div>
+    </div>
+
+    <div class="hero-visual">
+        <div class="preview-frame">
+            <div class="preview-inner">
+                <div class="preview-bar"><i></i><i></i><i></i><span>app.keyhaven.co.uk / overview</span></div>
+                <div class="preview-body">
+                    <div class="preview-kpi"><div class="k">Rent collected</div><div class="v">£14,530</div></div>
+                    <div class="preview-kpi"><div class="k">Arrears</div><div class="v" style="color:var(--danger)">£3,200</div></div>
+                    <div class="preview-kpi"><div class="k">Occupancy</div><div class="v">5 of 8</div></div>
+                    <div class="preview-kpi"><div class="k">Compliance</div><div class="v">96%</div></div>
+                    <div class="preview-ai">
+                        <div class="preview-ai-head"><icon name="sparkles" /> Grounded reply prepared</div>
+                        <div class="preview-msg">“Is 7 Bellevue Crescent still available? Could you let me know the rent?”</div>
+                        <div class="preview-reply">
+                            <strong>The property record lists it as available to let at £1,450 per calendar month.</strong>
+                            If you'd like to arrange a viewing, reply with a couple of times that suit you…
+                        </div>
+                        <div class="preview-foot">
+                            <span class="preview-tag">Auto-replied · 96% confidence</span>
+                            <span style="font-size:8px;color:var(--muted)">Grounded in 1 property record</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="preview-caption"><icon name="sparkles" /> Illustrative workspace, real seeded data in the demo</div>
+    </div>
+</section>
+
+<div class="site-wrap">
+    <div class="trust-strip">
+        <span><strong>@Model.ManagedProperties</strong> homes under management</span>
+        <span><strong>@Model.ActiveTenancies</strong> live tenancies</span>
+        <span><strong>@Model.ComplianceChecks</strong> certificates tracked</span>
+        <span><strong>9</strong> connected workflows</span>
+        <span style="margin-left:auto">Built in Glasgow for the UK market</span>
+    </div>
+</div>
+
+<section class="section" id="portfolio">
+    <div class="site-wrap">
+        <div class="section-head">
+            <div class="kicker">A working portfolio, not a mock-up</div>
+            <h2 style="margin-top:10px">The demo is already <em>running a business.</em></h2>
+            <p>These homes are held in the demo database, with owners, tenancies, rent ledgers, repairs and certificates attached. Sign in and follow any record through.</p>
+        </div>
+
+        <div class="portfolio-strip">
+            @foreach (var property in Model.AvailableProperties)
+            {
+                <a class="listing-card" asp-controller="Account" asp-action="Login">
+                    <div class="listing-media">
+                        <img src="@(property.ImageUrl ?? "/img/property-glasgow.svg")" alt="@property.ShortAddress" />
+                        <span class="badge badge-positive" style="position:absolute;top:12px;left:12px;background:rgba(255,253,248,.94)">Available now</span>
+                    </div>
+                    <div class="listing-body">
+                        <div class="listing-price">@property.MonthlyRent.Money()<span> pcm</span></div>
+                        <h4>@property.AddressLine1</h4>
+                        <div class="small muted">@property.City @property.Postcode</div>
+                        <div class="property-meta" style="margin-top:9px">
+                            <span><icon name="building" /> @property.Bedrooms bed</span>
+                            <span><icon name="home" /> @property.Type.Label()</span>
+                            <span style="margin-left:auto;color:var(--accent);font-weight:600">View in demo <icon name="arrow-right" /></span>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="section section-cream" id="platform">
+    <div class="site-wrap">
+        <div class="section-head">
+            <div class="kicker">The platform</div>
+            <h2 style="margin-top:10px">One connected workspace.<br /><em>Intelligence at the core.</em></h2>
+            <p>Not a collection of disconnected tools. Every workflow writes to the same property record, so the next person — or the assistant — starts with the full picture.</p>
+        </div>
+
+        <div class="workflow-grid">
+            <div class="workflow-card">
+                <div class="workflow-num">01</div>
+                <div class="workflow-icon"><icon name="users" /></div>
+                <h3>Owner onboarding</h3>
+                <p>Guided onboarding, digital agreements and clear portfolio setup from the first conversation.</p>
+                <ul><li>Agreement tracking</li><li>Owner portal access</li><li>Management terms recorded</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">02</div>
+                <div class="workflow-icon"><icon name="building" /></div>
+                <h3>Property marketing</h3>
+                <p>Set the listing up once, keep availability and copy in step across every channel.</p>
+                <ul><li>Listing publication</li><li>Channel tracking</li><li>Marketing copy in one place</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">03</div>
+                <div class="workflow-icon"><icon name="calendar" /></div>
+                <h3>Enquiries & viewings</h3>
+                <p>Capture the enquiry, pre-screen the applicant and move a promising lead into the diary.</p>
+                <ul><li>Enquiry register</li><li>Pre-screening status</li><li>Viewing diary & feedback</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">04</div>
+                <div class="workflow-icon"><icon name="doc" /></div>
+                <h3>Tenant onboarding</h3>
+                <p>Referencing, deposit registration and tenancy records in one guided handover.</p>
+                <ul><li>Right to Rent checks</li><li>Deposit scheme tracking</li><li>Tenancy lifecycle</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">05</div>
+                <div class="workflow-icon"><icon name="wallet" /></div>
+                <h3>Client money</h3>
+                <p>A rent ledger that shows what was billed, what landed and what needs a quiet nudge.</p>
+                <ul><li>Rent schedules</li><li>Bank reconciliation</li><li>Arrears ageing & chasers</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">06</div>
+                <div class="workflow-icon"><icon name="wrench" /></div>
+                <h3>Repairs</h3>
+                <p>Tenants report issues, AI triages urgency, and the job moves from quote to completion.</p>
+                <ul><li>AI triage</li><li>Quotes & approvals</li><li>Contractor assignment</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">07</div>
+                <div class="workflow-icon"><icon name="shield" /></div>
+                <h3>Certificates & compliance</h3>
+                <p>Gas, EPC, EICR and HMO licensing tracked across the portfolio, with renewals assigned before they lapse.</p>
+                <ul><li>Portfolio compliance score</li><li>Expiry watchlist</li><li>Renewal scheduling</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">08</div>
+                <div class="workflow-icon"><icon name="lock" /></div>
+                <h3>Key vault</h3>
+                <p>A clear record of every key and fob: who has it, why, and when it came back.</p>
+                <ul><li>Key & fob register</li><li>Checkout reasons</li><li>Overdue visibility</li></ul>
+            </div>
+            <div class="workflow-card">
+                <div class="workflow-num">09</div>
+                <div class="workflow-icon"><icon name="users" /></div>
+                <h3>CRM & relationships</h3>
+                <p>Every conversation attached to the right owner, tenant, contractor or applicant.</p>
+                <ul><li>Contact timeline</li><li>Follow-ups</li><li>Applicant history</li></ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="ai">
+    <div class="site-wrap">
+        <div class="section-head">
+            <div class="kicker">Email, answered from the record</div>
+            <h2 style="margin-top:10px">The right answer starts with <em>the right record.</em></h2>
+            <p>Keyhaven classifies each inbound message, finds the property, tenancy, repair or owner record behind it, and either sends a routine reply or prepares a draft for a person. If the supporting fact is missing, it says so instead of inventing it.</p>
+        </div>
+
+        <div class="example-stack">
+            <div class="email-example">
+                <div class="incoming">
+                    <h4>Incoming email</h4>
+                    <div class="email-subject">Is 7 Bellevue Crescent still available?</div>
+                    <div class="email-text">Hi there, I'm interested in the flat at 7 Bellevue Crescent. Is it still available, and could you let me know the rent?</div>
+                    <div class="record-line"><icon name="building" /> Property record: available to let · £1,450 pcm</div>
+                </div>
+                <div class="outgoing">
+                    <div class="email-tag auto"><icon name="check" /> Automated reply</div>
+                    <div class="email-subject">Re: Is 7 Bellevue Crescent still available?</div>
+                    <div class="email-text">The property record lists it as available to let at £1,450 per calendar month. If you'd like to arrange a viewing, please reply with a couple of times that suit you…</div>
+                    <div class="record-line"><icon name="sparkles" /> Sent automatically · grounded in 1 property record</div>
+                </div>
+            </div>
+
+            <div class="email-example">
+                <div class="incoming">
+                    <h4>Incoming email</h4>
+                    <div class="email-subject">Any news on the kitchen tap?</div>
+                    <div class="email-text">Just checking whether there's an update on the leaking kitchen tap. It's still dripping into the bowl.</div>
+                    <div class="record-line"><icon name="wrench" /> Repair record: contractor assigned · no appointment recorded</div>
+                </div>
+                <div class="outgoing">
+                    <div class="email-tag"><icon name="eye" /> Draft for review</div>
+                    <div class="email-subject">Re: Any news on the kitchen tap?</div>
+                    <div class="email-text">A contractor has been assigned to the repair. I can't see an appointment time recorded yet, so I'll ask the team to confirm one with you.</div>
+                    <div class="record-line"><icon name="sparkles" /> Drafted, not sent · no appointment is promised</div>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="margin-top:22px">
+            <span class="pill"><icon name="shield" /> No invented facts</span>
+            <span class="pill"><icon name="eye" /> Human review where it matters</span>
+            <span class="pill"><icon name="sparkles" /> Every reply shows its grounding</span>
+        </div>
+    </div>
+</section>
+
+<section class="section tight">
+    <div class="site-wrap">
+        <div class="cta-band">
+            <div>
+                <h2>See the whole portfolio working.</h2>
+                <p>The demo is fully populated: eight properties, live rent ledgers, compliance gaps, repair jobs and an AI inbox waiting for review.</p>
+            </div>
+            <div class="row wrap">
+                <a class="btn btn-accent btn-lg" asp-controller="Account" asp-action="Login">Open the demo <icon name="arrow-right" /></a>
+                <a class="btn btn-outline btn-lg" href="mailto:hello@keyhaven.example" style="border-color:rgba(255,255,255,.3);color:#fff">Talk to us</a>
+            </div>
+        </div>
+    </div>
+</section>

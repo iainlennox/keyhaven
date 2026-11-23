@@ -1,0 +1,214 @@
+@model InboxDetailsViewModel
+@{
+    ViewData["Title"] = Model.Message.Subject;
+    var message = Model.Message;
+    var tone = message.Confidence >= 90 ? "high" : message.Confidence >= 70 ? "mid" : "low";
+    var handled = message.Status is InboxStatus.Replied or InboxStatus.AutoReplied;
+    var grounding = string.IsNullOrWhiteSpace(message.Grounding)
+        ? Array.Empty<string>()
+        : message.Grounding.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">AI inbox · @message.ReceivedAt.ToString("d MMM yyyy, HH:mm")</div>
+        <h1 class="page-title">@message.Subject</h1>
+        <p class="page-subtitle">From @message.FromName &lt;@message.FromEmail&gt;</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-action="Index">← Inbox</a>
+        @if (!handled)
+        {
+            <form asp-action="Analyse" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@message.Id" />
+                <button class="btn btn-primary" type="submit"><icon name="sparkles" /> Run assistant</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="inbox-layout">
+    <div class="stack-md">
+        <div class="thread">
+            <div class="thread-head">
+                <div class="row between wrap" style="gap:10px">
+                    <div class="row">
+                        <span class="msg-avatar">@(message.FromName.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                        <div>
+                            <div style="font-weight:650">@message.FromName</div>
+                            <div class="small muted">@message.FromEmail</div>
+                        </div>
+                    </div>
+                    <div class="row wrap" style="gap:5px">
+                        <span class="badge badge-@message.Category.Tone()">@message.Category.Label()</span>
+                        <span class="badge badge-@message.Status.Tone()">@message.Status.Label()</span>
+                        <span class="badge badge-@message.AutomationMode.Tone() no-dot">@message.AutomationMode.Label()</span>
+                    </div>
+                </div>
+                <div style="font-family:var(--serif);font-size:18px;margin-top:12px">@message.Subject</div>
+            </div>
+            <div class="thread-body">@message.Body</div>
+            <div class="thread-foot">
+                <span class="small muted">Received @message.ReceivedAt.Relative()</span>
+                <span class="spacer"></span>
+                <span class="small muted">@(message.HandledAt is null ? "Not yet handled" : $"Handled by {message.HandledBy} · {message.HandledAt.Value.Relative()}")</span>
+            </div>
+        </div>
+
+        @if (handled)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">Reply sent</div><div class="card-sub">@(message.HandledBy) · @(message.HandledAt?.Relative() ?? "")</div></div>
+                    <span class="badge badge-positive">Handled</span>
+                </div>
+                <div class="card-body">
+                    <div class="callout" style="margin-bottom:14px">
+                        <icon name="check" />
+                        <div>@(message.AutomationMode == AutomationMode.AutoSent ? "This routine reply was sent automatically from a complete supporting record." : "This reply was reviewed and sent by a person.")</div>
+                    </div>
+                    <div class="thread-body" style="padding:0;white-space:pre-line">@message.DraftReply</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">@(string.IsNullOrWhiteSpace(message.DraftReply) ? "Write a reply" : "Review the draft")</div><div class="card-sub">The assistant uses only the records shown alongside</div></div>
+                </div>
+                <div class="card-body">
+                    @if (message.AutomationMode == AutomationMode.Escalated)
+                    {
+                        <div class="callout warning" style="margin-bottom:14px">
+                            <icon name="alert" />
+                            <div>No supporting record was found. The assistant has left this for a person rather than guessing.</div>
+                        </div>
+                    }
+                    <form asp-action="Send" method="post" class="reply-box">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@message.Id" />
+                        <textarea name="reply" placeholder="Write a reply, or run the assistant to prepare a grounded draft…">@message.DraftReply</textarea>
+                        <div class="reply-actions">
+                            <button class="btn btn-primary" type="submit"><icon name="send" /> Send reply</button>
+                            <span class="small muted">Sending records the reply on the CRM timeline.</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <div class="row wrap" style="gap:8px">
+                        <form asp-action="Analyse" method="post" style="margin:0">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@message.Id" />
+                            <button class="btn btn-outline btn-sm" type="submit"><icon name="refresh" /> Re-run assistant</button>
+                        </form>
+                        <form asp-action="Escalate" method="post" style="margin:0">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@message.Id" />
+                            <button class="btn btn-ghost btn-sm" type="submit"><icon name="user" /> Leave for a person</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(message.DraftReply) && !handled)
+        {
+            <div class="ai-panel">
+                <div class="ai-head"><icon name="sparkles" /> Draft prepared</div>
+                <div class="ai-text">This draft is grounded in the records opposite. Review it, edit anything that needs a person's judgement, then send.</div>
+            </div>
+        }
+    </div>
+
+    <div class="stack-md">
+        <div class="ai-panel">
+            <div class="ai-head"><icon name="sparkles" /> Grounding</div>
+            <div class="row between" style="margin-top:6px">
+                <div class="ai-title" style="margin-top:0">Built from the record.</div>
+                <span class="badge badge-@(tone == "high" ? "positive" : tone == "mid" ? "warning" : "danger")">@message.Confidence%</span>
+            </div>
+            <div class="meter" style="margin-top:10px"><div class="meter-fill @tone" style="width:@message.Confidence%"></div></div>
+            <ul class="grounding-list">
+                @foreach (var line in grounding)
+                {
+                    <li>@line</li>
+                }
+            </ul>
+            @if (grounding.Length == 0)
+            {
+                <div class="ai-text">No supporting record was identified for this message.</div>
+            }
+        </div>
+
+        @if (Model.Property is not null || Model.Tenancy is not null || Model.Ticket is not null || Model.Owner is not null)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Linked records</div><div class="card-sub">Where the answer came from</div></div></div>
+                <div class="card-body stack-sm">
+                    @if (Model.Property is not null)
+                    {
+                        <a class="record-chip" asp-controller="Properties" asp-action="Details" asp-route-id="@Model.Property.Id">
+                            <icon name="building" />
+                            <span><span class="label">Property</span><br /><span class="value">@Model.Property.Reference · @Model.Property.ShortAddress</span></span>
+                        </a>
+                    }
+                    @if (Model.Tenancy is not null)
+                    {
+                        <a class="record-chip" asp-controller="Tenancies" asp-action="Details" asp-route-id="@Model.Tenancy.Id">
+                            <icon name="doc" />
+                            <span><span class="label">Tenancy</span><br /><span class="value">@Model.Tenancy.Tenant?.FullName · @Model.Tenancy.RentAmount.Money() pcm</span></span>
+                        </a>
+                    }
+                    @if (Model.Ticket is not null)
+                    {
+                        <a class="record-chip" asp-controller="Maintenance" asp-action="Details" asp-route-id="@Model.Ticket.Id">
+                            <icon name="wrench" />
+                            <span><span class="label">Repair</span><br /><span class="value">@Model.Ticket.Reference · @Model.Ticket.Title</span></span>
+                        </a>
+                    }
+                    @if (Model.Owner is not null)
+                    {
+                        <a class="record-chip" asp-controller="Owners" asp-action="Details" asp-route-id="@Model.Owner.Id">
+                            <icon name="users" />
+                            <span><span class="label">Owner</span><br /><span class="value">@Model.Owner.DisplayName · @Model.Owner.CompanyName</span></span>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Sending policy</div><div class="card-sub">How this was handled</div></div></div>
+            <div class="card-body">
+                <div class="stack-sm small">
+                    <div class="row between"><span class="muted">Mode</span><span class="strong">@message.AutomationMode.Label()</span></div>
+                    <div class="row between"><span class="muted">Category</span><span class="strong">@message.Category.Label()</span></div>
+                    <div class="row between"><span class="muted">Confidence</span><span class="strong">@(message.Confidence == 0 ? "—" : $"{message.Confidence}%")</span></div>
+                </div>
+                <div class="divider"></div>
+                <div class="tiny muted" style="line-height:1.6">Automatic replies are limited to clear, routine questions with a complete record. Everything else is drafted for review or escalated. Factual claims are drawn only from the linked records.</div>
+            </div>
+        </div>
+
+        @if (Model.Queue.Count > 0)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Up next</div><div class="card-sub">Also waiting</div></div></div>
+                <div class="card-body">
+                    @foreach (var item in Model.Queue)
+                    {
+                        <a class="queue-item" asp-action="Details" asp-route-id="@item.Id">
+                            <span class="queue-dot"></span>
+                            <span style="flex:1">
+                                <span class="small strong" style="display:block">@item.FromName</span>
+                                <span class="tiny muted">@item.Subject</span>
+                            </span>
+                            <span class="badge badge-@item.Status.Tone()">@item.Status.Label()</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

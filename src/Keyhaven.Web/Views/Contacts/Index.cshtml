@@ -1,0 +1,162 @@
+@model ContactsIndexViewModel
+@{
+    ViewData["Title"] = "CRM timeline";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var types = new (ContactType? Type, string Label)[]
+    {
+        (null, "Everyone"), (ContactType.Owner, "Owners"), (ContactType.Tenant, "Tenants"),
+        (ContactType.Contractor, "Contractors"), (ContactType.Applicant, "Applicants")
+    };
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Relationships</div>
+        <h1 class="page-title">CRM timeline.</h1>
+        <p class="page-subtitle">Every conversation, follow-up and note connected to the person and the property.</p>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon"><icon name="users" /></div>
+        <div class="stat-label">Contact notes</div>
+        <div class="stat-value">@Model.NoteCount</div>
+        <div class="stat-meta">Across the portfolio</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.FollowUps.Count(n => n.FollowUpOn <= today) > 0 ? "warn" : "sage")"><icon name="clock" /></div>
+        <div class="stat-label">Follow-ups</div>
+        <div class="stat-value">@Model.FollowUps.Count</div>
+        <div class="stat-meta">@Model.FollowUps.Count(n => n.FollowUpOn <= today) due or overdue</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="doc" /></div>
+        <div class="stat-label">In this view</div>
+        <div class="stat-value">@Model.Notes.Count</div>
+        <div class="stat-meta">Most recent first</div>
+    </div>
+</div>
+
+<div class="row between wrap section-gap" style="margin-bottom:14px">
+    <div class="segmented">
+        @foreach (var type in types)
+        {
+            <a class="@(Model.Type == type.Type ? "active" : "")" asp-action="Index" asp-route-type="@type.Type" asp-route-q="@Model.Query">@type.Label</a>
+        }
+    </div>
+    <form method="get" asp-action="Index" class="row" style="gap:8px">
+        <input type="hidden" name="type" value="@Model.Type" />
+        <div style="position:relative">
+            <icon name="search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted)" />
+            <input type="search" name="q" value="@Model.Query" placeholder="Name, email or note…" style="padding-left:32px;min-width:220px" />
+        </div>
+        <button class="btn btn-outline btn-sm" type="submit">Search</button>
+    </form>
+</div>
+
+<div class="split">
+    <div class="card">
+        <div class="card-header"><div><div class="card-title">Conversation timeline</div><div class="card-sub">Newest first</div></div></div>
+        <div class="card-body">
+            @if (Model.Notes.Count == 0)
+            {
+                <div class="empty"><div class="empty-icon"><icon name="users" /></div><div class="empty-title">No notes match</div><div class="empty-text">Add the first note on the right.</div></div>
+            }
+            else
+            {
+                <div class="timeline">
+                    @foreach (var note in Model.Notes)
+                    {
+                        <div class="timeline-item">
+                            <span class="timeline-dot @(note.ContactType == ContactType.Owner ? "accent" : note.IsFollowUp ? "sage" : "")"></span>
+                            <div class="timeline-head">
+                                <span class="timeline-title">@note.ContactName <span class="badge badge-@note.ContactType.Tone() no-dot" style="margin-left:5px">@note.ContactType.Label()</span></span>
+                                <span class="timeline-time">@note.OccurredAt.Relative()</span>
+                            </div>
+                            <div class="timeline-text">@note.Summary</div>
+                            <div class="row wrap" style="gap:8px;margin-top:6px">
+                                <span class="pill" style="padding:2px 8px;font-size:10.5px"><icon name="mail" /> @note.Channel.Label()</span>
+                                @if (note.Property is not null)
+                                {
+                                    <a class="pill" style="padding:2px 8px;font-size:10.5px" asp-controller="Properties" asp-action="Details" asp-route-id="@note.Property.Id"><icon name="building" /> @note.Property.Reference</a>
+                                }
+                                <span class="tiny muted">by @note.CreatedBy</span>
+                                @if (note.IsFollowUp && note.FollowUpOn is not null)
+                                {
+                                    <span class="badge badge-@(note.FollowUpOn <= today ? "danger" : "warning")">Follow up @note.FollowUpOn.Value.ShortDate()</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Add a note</div><div class="card-sub">Log a conversation</div></div></div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>Contact type</label>
+                            <select name="ContactType" asp-items="Html.GetEnumSelectList<ContactType>()"></select>
+                        </div>
+                        <div class="field">
+                            <label>Channel</label>
+                            <select name="Channel" asp-items="Html.GetEnumSelectList<ContactChannel>()"></select>
+                        </div>
+                    </div>
+                    <div class="field"><label>Name</label><input name="ContactName" required placeholder="Who did you speak to?" /></div>
+                    <div class="field"><label>Email</label><input name="ContactEmail" type="email" placeholder="Optional" /></div>
+                    <div class="field"><label>Note</label><textarea name="Summary" rows="4" required placeholder="What was discussed and what happens next?"></textarea></div>
+                    <div class="field">
+                        <label>Property</label>
+                        <select name="PropertyId" asp-items="ViewBag.Properties"><option value="">Not property-specific</option></select>
+                    </div>
+                    <div class="field">
+                        <label class="checkbox"><input type="checkbox" name="IsFollowUp" value="true" /> Add a follow-up date</label>
+                    </div>
+                    <div class="field"><label>Follow up on</label><input type="date" name="FollowUpOn" /></div>
+                    <button class="btn btn-primary btn-block" type="submit">Add note</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Follow-ups</div><div class="card-sub">Due or upcoming</div></div></div>
+            <div class="card-body">
+                @if (Model.FollowUps.Count == 0)
+                {
+                    <div class="small muted">No follow-ups outstanding.</div>
+                }
+                else
+                {
+                    @foreach (var note in Model.FollowUps)
+                    {
+                        <div class="list-row" style="align-items:flex-start">
+                            <div class="list-body">
+                                <div class="list-title">@note.ContactName</div>
+                                <div class="list-sub">@note.Summary</div>
+                                <div class="row" style="gap:6px;margin-top:5px">
+                                    <span class="badge badge-@(note.FollowUpOn <= today ? "danger" : "warning")">@note.FollowUpOn?.ShortDate()</span>
+                                    @if (note.Property is not null)
+                                    {
+                                        <a class="tiny muted" asp-controller="Properties" asp-action="Details" asp-route-id="@note.Property.Id">@note.Property.Reference</a>
+                                    }
+                                </div>
+                            </div>
+                            <form asp-action="CompleteFollowUp" method="post" style="margin:0">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@note.Id" />
+                                <button class="btn btn-ghost btn-sm" type="submit" title="Complete follow-up"><icon name="check" /></button>
+                            </form>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

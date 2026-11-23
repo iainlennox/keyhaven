@@ -1,0 +1,157 @@
+@model ViewingsIndexViewModel
+@{
+    ViewData["Title"] = "Viewings";
+    var now = DateTime.Now;
+    var nextWeek = now.AddDays(7);
+    var thisWeek = Model.Upcoming.Count(v => v.ScheduledAt <= nextWeek);
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Lettings diary</div>
+        <h1 class="page-title">Viewings.</h1>
+        <p class="page-subtitle">Schedule, pre-screen and capture feedback — with the applicant, property and enquiry on the same thread.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-primary" asp-action="Create"><icon name="plus" /> Book a viewing</a>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="calendar" /></div>
+        <div class="stat-label">Upcoming</div>
+        <div class="stat-value">@Model.Upcoming.Count</div>
+        <div class="stat-meta">In the diary</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="clock" /></div>
+        <div class="stat-label">This week</div>
+        <div class="stat-value">@thisWeek</div>
+        <div class="stat-meta">Next seven days</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="user" /></div>
+        <div class="stat-label">Awaiting confirmation</div>
+        <div class="stat-value">@Model.Upcoming.Count(v => v.Status == ViewingStatus.Requested)</div>
+        <div class="stat-meta">Requested slots</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon"><icon name="check" /></div>
+        <div class="stat-label">Pre-screened</div>
+        <div class="stat-value">@Model.Upcoming.Count(v => v.PrescreenStatus == PrescreenStatus.Passed)</div>
+        <div class="stat-meta">Passed screening</div>
+    </div>
+</div>
+
+<div class="section-gap">
+    <div class="row between" style="margin-bottom:12px">
+        <h2 style="font-family:var(--serif);font-size:22px;font-weight:500">Upcoming</h2>
+        <span class="small muted">@Model.Upcoming.Count scheduled</span>
+    </div>
+
+    @if (Model.Upcoming.Count == 0)
+    {
+        <div class="card"><div class="empty"><div class="empty-icon"><icon name="calendar" /></div><div class="empty-title">No viewings booked</div><div class="empty-text">Book a viewing from an enquiry or straight from the diary.</div></div></div>
+    }
+    else
+    {
+        @foreach (var group in Model.Upcoming.GroupBy(v => v.ScheduledAt.Date))
+        {
+            <div class="card" style="margin-bottom:14px">
+                <div class="card-header">
+                    <div><div class="card-title">@group.Key.ToString("dddd d MMMM")</div><div class="card-sub">@group.Count() viewing@(group.Count() == 1 ? "" : "s")</div></div>
+                </div>
+                <div class="card-body">
+                    @foreach (var viewing in group)
+                    {
+                        <div class="list-row">
+                            <div style="text-align:center;min-width:62px">
+                                <div style="font-family:var(--serif);font-size:20px;line-height:1">@viewing.ScheduledAt.ToString("HH:mm")</div>
+                                <div class="tiny muted">@viewing.DurationMinutes min</div>
+                            </div>
+                            <div class="list-body">
+                                <div class="row between wrap" style="gap:6px">
+                                    <div class="row" style="gap:8px">
+                                        <span class="avatar sm">@(viewing.ApplicantName.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                                        <span><span class="list-title">@viewing.ApplicantName</span><br /><span class="list-sub">@viewing.ApplicantEmail</span></span>
+                                    </div>
+                                    <div class="row wrap" style="gap:5px">
+                                        <span class="badge badge-@viewing.Status.Tone()">@viewing.Status.Label()</span>
+                                        <span class="badge badge-@viewing.PrescreenStatus.Tone()">Pre-screen: @viewing.PrescreenStatus.Label()</span>
+                                    </div>
+                                </div>
+                                <div class="list-sub" style="margin-top:3px">@viewing.Property?.Reference · @viewing.Property?.ShortAddress</div>
+                                @if (!string.IsNullOrWhiteSpace(viewing.AgentNotes))
+                                {
+                                    <div class="tiny muted" style="margin-top:3px">@viewing.AgentNotes</div>
+                                }
+                            </div>
+                            <div class="row wrap" style="gap:5px;justify-content:flex-end">
+                                @if (viewing.Status == ViewingStatus.Requested)
+                                {
+                                    <form asp-action="Confirm" method="post" style="margin:0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@viewing.Id" />
+                                        <button class="btn btn-primary btn-sm" type="submit">Confirm</button>
+                                    </form>
+                                }
+                                @if (viewing.PrescreenStatus == PrescreenStatus.NotStarted)
+                                {
+                                    <form asp-action="InvitePrescreen" method="post" style="margin:0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@viewing.Id" />
+                                        <button class="btn btn-outline btn-sm" type="submit">Invite pre-screen</button>
+                                    </form>
+                                }
+                                <details class="details-pop">
+                                    <summary class="btn btn-outline btn-sm">Feedback</summary>
+                                    <div class="pop-panel" style="width:280px;position:absolute;right:0;z-index:20;text-align:left">
+                                        <form asp-action="Complete" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@viewing.Id" />
+                                            <div class="field"><label>Viewing feedback</label><textarea name="feedback" rows="3" placeholder="What did the applicant think?"></textarea></div>
+                                            <button class="btn btn-primary btn-sm" type="submit">Complete viewing</button>
+                                        </form>
+                                    </div>
+                                </details>
+                                <form asp-action="Cancel" method="post" style="margin:0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@viewing.Id" />
+                                    <button class="btn btn-ghost btn-sm" type="submit" title="Cancel"><icon name="x" /></button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="card section-gap">
+    <div class="card-header"><div><div class="card-title">Recent diary</div><div class="card-sub">Completed, no-shows and cancellations</div></div></div>
+    @if (Model.Past.Count == 0)
+    {
+        <div class="empty" style="padding:26px"><div class="empty-title">Nothing in the archive yet</div><div class="empty-text">Past viewings will appear here with feedback.</div></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table compact">
+                <thead><tr><th>Date</th><th>Applicant</th><th>Property</th><th>Status</th><th>Feedback</th></tr></thead>
+                <tbody>
+                @foreach (var viewing in Model.Past)
+                {
+                    <tr>
+                        <td>@viewing.ScheduledAt.ToString("d MMM yyyy")<div class="sub-cell">@viewing.ScheduledAt.TimeLabel()</div></td>
+                        <td class="primary-cell">@viewing.ApplicantName<div class="sub-cell">@viewing.ApplicantEmail</div></td>
+                        <td>@viewing.Property?.ShortAddress</td>
+                        <td><span class="badge badge-@viewing.Status.Tone()">@viewing.Status.Label()</span></td>
+                        <td class="muted">@(viewing.Feedback ?? "No feedback recorded")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

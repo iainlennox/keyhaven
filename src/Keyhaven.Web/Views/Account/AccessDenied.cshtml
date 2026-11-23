@@ -1,0 +1,11 @@
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Access denied";
+}
+<div style="text-align:center;padding:20px 0">
+    <div class="empty-icon" style="background:var(--danger-soft);color:var(--danger)"><icon name="lock" /></div>
+    <h1 style="font-size:30px">That area isn't yours.</h1>
+    <p class="sub" style="margin:10px auto 24px;max-width:36ch">Your account doesn't have access to that part of the workspace. If you think this is wrong, ask an administrator to check your role.</p>
+    <a class="btn btn-primary" asp-controller="Dashboard" asp-action="Index">Back to my overview</a>
+    <div style="margin-top:16px"><a class="small muted" asp-controller="Home" asp-action="Index">Return to the public site</a></div>
+</div>

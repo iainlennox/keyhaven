@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Converted mill apartment in Manchester">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ccd7d6"/><stop offset="1" stop-color="#ece4d7"/></linearGradient>
+    <linearGradient id="brick" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a96d53"/><stop offset="1" stop-color="#8c5540"/></linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.85" numOctaves="2"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer></filter>
+  </defs>
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="120" cy="100" r="44" fill="#f6ead4" opacity=".9"/>
+  <path d="M0 545h800v55H0z" fill="#5d6b61"/>
+  <!-- chimney -->
+  <rect x="620" y="90" width="60" height="230" fill="#8c5540"/>
+  <rect x="612" y="80" width="76" height="24" fill="#744433"/>
+  <!-- main mill block -->
+  <rect x="80" y="180" width="560" height="380" fill="url(#brick)"/>
+  <rect x="80" y="162" width="560" height="24" fill="#794735"/>
+  <path d="M640 300h120v260H640z" fill="#965c45"/>
+  <!-- large grid windows -->
+  <g fill="#24342e">
+    <rect x="120" y="210" width="100" height="86" rx="3"/><rect x="250" y="210" width="100" height="86" rx="3"/><rect x="380" y="210" width="100" height="86" rx="3"/><rect x="510" y="210" width="70" height="86" rx="3"/>
+    <rect x="120" y="340" width="100" height="86" rx="3"/><rect x="250" y="340" width="100" height="86" rx="3"/><rect x="380" y="340" width="100" height="86" rx="3"/><rect x="510" y="340" width="70" height="86" rx="3"/>
+    <rect x="120" y="470" width="100" height="70" rx="3"/><rect x="510" y="470" width="70" height="70" rx="3"/>
+    <rect x="250" y="450" width="100" height="110" rx="3"/>
+    <rect x="670" y="330" width="40" height="60" rx="2"/><rect x="730" y="330" width="30" height="60" rx="2"/><rect x="670" y="430" width="40" height="60" rx="2"/><rect x="730" y="430" width="30" height="60" rx="2"/>
+  </g>
+  <g stroke="#a96d53" stroke-width="4"><path d="M170 210v86M320 210v86M450 210v86M545 210v86M170 340v86M320 340v86M450 340v86M545 340v86M170 470v70M545 470v70"/></g>
+  <g fill="#f1d9a7" opacity=".85">
+    <rect x="128" y="220" width="26" height="32"/><rect x="258" y="350" width="26" height="32"/><rect x="518" y="220" width="18" height="28"/><rect x="678" y="340" width="14" height="20"/>
+  </g>
+  <g fill="#3d4d44"><rect x="60" y="520" width="16" height="40"/><rect x="700" y="520" width="16" height="40"/></g>
+  <rect width="800" height="600" filter="url(#grain)" opacity=".5"/>
+</svg>

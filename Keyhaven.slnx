@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Keyhaven.Web/Keyhaven.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Keyhaven.Tests/Keyhaven.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" role="img" aria-label="Illustrative architecture with arches and warm light">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3ede2"/><stop offset="1" stop-color="#e3d9c8"/></linearGradient>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d8c39f"/><stop offset="1" stop-color="#b99d74"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a87a54"/><stop offset="1" stop-color="#865c3d"/></linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.8" numOctaves="2"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer></filter>
+  </defs>
+  <rect width="900" height="1100" fill="url(#bg)"/>
+  <circle cx="680" cy="240" r="130" fill="#f3e3c7" opacity=".8"/>
+  <path d="M0 980h900v120H0z" fill="#c8b28f"/>
+  <!-- colonnade -->
+  <g>
+    <rect x="60" y="300" width="780" height="680" fill="url(#wall)"/>
+    <path d="M60 300h780v60H60z" fill="#c2a67e"/>
+    <path d="M120 360h180v620H120z" fill="url(#shade)"/>
+    <path d="M360 360h180v620H360z" fill="url(#shade)"/>
+    <path d="M600 360h180v620H600z" fill="url(#shade)"/>
+    <path d="M150 520a60 60 0 0 1 120 0v60H150z" fill="#2f4039"/>
+    <path d="M390 520a60 60 0 0 1 120 0v60H390z" fill="#2f4039"/>
+    <path d="M630 520a60 60 0 0 1 120 0v60H630z" fill="#2f4039"/>
+    <path d="M150 780a60 60 0 0 1 120 0v200H150z" fill="#3a4b42"/>
+    <path d="M390 780a60 60 0 0 1 120 0v200H390z" fill="#3a4b42"/>
+    <path d="M630 780a60 60 0 0 1 120 0v200H630z" fill="#3a4b42"/>
+    <g stroke="#e6d6b8" stroke-width="4" opacity=".55">
+      <path d="M120 360v620M300 360v620M360 360v620M540 360v620M600 360v620M780 360v620"/>
+    </g>
+  </g>
+  <!-- foliage -->
+  <g fill="#4b6352">
+    <circle cx="80" cy="1010" r="90"/><circle cx="180" cy="1060" r="70"/><circle cx="820" cy="1030" r="100"/><circle cx="740" cy="1075" r="60"/>
+  </g>
+  <g fill="#33463c"><rect x="74" y="1010" width="14" height="90"/><rect x="814" y="1030" width="14" height="70"/></g>
+  <rect width="900" height="1100" filter="url(#grain)" opacity=".55"/>
+</svg>

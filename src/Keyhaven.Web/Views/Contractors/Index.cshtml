@@ -1,0 +1,67 @@
+@model ContractorsIndexViewModel
+@{
+    ViewData["Title"] = "Contractors";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Relationships</div>
+        <h1 class="page-title">Contractor panel.</h1>
+        <p class="page-subtitle">The trades behind the repairs — insured, rated and connected to their job history.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-primary" asp-action="Create"><icon name="plus" /> Add contractor</a>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="users" /></div>
+        <div class="stat-label">Active contractors</div>
+        <div class="stat-value">@Model.ActiveCount</div>
+        <div class="stat-meta">Available to assign</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="wrench" /></div>
+        <div class="stat-label">Active jobs</div>
+        <div class="stat-value">@Model.ActiveJobs</div>
+        <div class="stat-meta">Across the panel</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon accent"><icon name="pound" /></div>
+        <div class="stat-label">Quoted value</div>
+        <div class="stat-value">@Model.QuotedValue.Money()</div>
+        <div class="stat-meta">On live jobs</div>
+    </div>
+</div>
+
+<div class="card section-gap">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Contractor</th><th>Trade</th><th>Rating</th><th>Insured</th><th class="num">Active jobs</th><th class="num">Completed</th><th class="num">Quoted value</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    <td>
+                        <a class="row" style="gap:9px" asp-action="Details" asp-route-id="@row.Contractor.Id">
+                            <span class="avatar sm">@(row.Contractor.Name.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                            <span><span class="primary-cell" style="display:block">@row.Contractor.Name</span><span class="sub-cell">@row.Contractor.Email</span></span>
+                        </a>
+                    </td>
+                    <td>@row.Contractor.Trade</td>
+                    <td><span class="rating"><icon name="star" /> @row.Contractor.Rating.ToString("0.0")</span></td>
+                    <td>@if (row.Contractor.Insured) { <span class="badge badge-positive">Insured</span> } else { <span class="badge badge-warning">Not insured</span> }</td>
+                    <td class="num">@row.ActiveJobs</td>
+                    <td class="num">@row.CompletedJobs</td>
+                    <td class="num">@row.QuotedValue.Money()</td>
+                    <td class="text-right"><a class="icon-btn" asp-action="Details" asp-route-id="@row.Contractor.Id"><icon name="chevron-right" /></a></td>
+                </tr>
+            }
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="8"><div class="empty" style="padding:26px"><div class="empty-title">No contractors yet</div><div class="empty-text">Add the first trade to the panel.</div></div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

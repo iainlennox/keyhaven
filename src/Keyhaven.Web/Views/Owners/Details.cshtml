@@ -1,0 +1,206 @@
+@model OwnerDetailsViewModel
+@{
+    ViewData["Title"] = Model.Owner.DisplayName;
+    var actionRows = Model.Compliance.Where(c => c.State != ComplianceState.Valid).ToList();
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Owner record</div>
+        <h1 class="page-title">@Model.Owner.DisplayName</h1>
+        <p class="page-subtitle">@(Model.Owner.CompanyName ?? "Private owner") · Client since @Model.Owner.OnboardedOn.ShortDate()</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-action="Index">← Owners</a>
+        <a class="btn btn-outline" asp-action="Edit" asp-route-id="@Model.Owner.Id"><icon name="doc" /> Edit</a>
+        @if (!Model.Owner.AgreementSigned)
+        {
+            <form asp-action="SignAgreement" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Owner.Id" />
+                <button class="btn btn-primary" type="submit"><icon name="check" /> Record agreement</button>
+            </form>
+        }
+        else if (Model.Owner.Status is OwnerStatus.Prospect or OwnerStatus.Onboarding)
+        {
+            <form asp-action="AdvanceStatus" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Owner.Id" />
+                <button class="btn btn-primary" type="submit"><icon name="arrow-right" /> Advance to @(Model.Owner.Status == OwnerStatus.Prospect ? "onboarding" : "active")</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon"><icon name="building" /></div>
+        <div class="stat-label">Properties</div>
+        <div class="stat-value">@Model.Properties.Count</div>
+        <div class="stat-meta">@Model.ActiveTenancies active tenancies</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="pound" /></div>
+        <div class="stat-label">Rent roll</div>
+        <div class="stat-value">@Model.RentRoll.Money()</div>
+        <div class="stat-meta">Managed monthly rent</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.Arrears > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Arrears</div>
+        <div class="stat-value" style="@(Model.Arrears > 0 ? "color:var(--danger)" : "")">@Model.Arrears.Money()</div>
+        <div class="stat-meta">Across this portfolio</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(actionRows.Count > 0 ? "warn" : "sage")"><icon name="shield" /></div>
+        <div class="stat-label">Compliance actions</div>
+        <div class="stat-value">@actionRows.Count</div>
+        <div class="stat-meta">Expired, missing or expiring</div>
+    </div>
+</div>
+
+<div class="split section-gap">
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header">
+                <div><div class="card-title">Portfolio</div><div class="card-sub">Properties managed for this owner</div></div>
+                <span class="badge badge-@Model.Owner.Status.Tone()">@Model.Owner.Status.Label()</span>
+            </div>
+            @if (Model.Properties.Count == 0)
+            {
+                <div class="empty" style="padding:26px"><div class="empty-icon"><icon name="building" /></div><div class="empty-title">No properties yet</div><div class="empty-text">Add a property and attach it to this owner.</div></div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Property</th><th>Status</th><th class="num">Rent</th><th>Listing</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var property in Model.Properties)
+                        {
+                            <tr>
+                                <td><a class="primary-cell" asp-controller="Properties" asp-action="Details" asp-route-id="@property.Id">@property.Reference</a><div class="sub-cell">@property.ShortAddress</div></td>
+                                <td><span class="badge badge-@property.Status.Tone()">@property.Status.Label()</span></td>
+                                <td class="num">@property.MonthlyRent.Money()</td>
+                                <td>@(property.ListingPublished ? "Published" : "—")</td>
+                                <td class="text-right"><a class="icon-btn" asp-controller="Properties" asp-action="Details" asp-route-id="@property.Id"><icon name="chevron-right" /></a></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Compliance watchlist</div><div class="card-sub">Certificates needing action across this portfolio</div></div></div>
+            @if (actionRows.Count == 0)
+            {
+                <div class="empty" style="padding:26px"><div class="empty-icon"><icon name="shield" /></div><div class="empty-title">All in order</div><div class="empty-text">No certificate actions for this owner.</div></div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table compact">
+                        <thead><tr><th>Property</th><th>Certificate</th><th>Expiry</th><th>Status</th></tr></thead>
+                        <tbody>
+                        @foreach (var row in actionRows)
+                        {
+                            <tr>
+                                <td><a class="primary-cell" asp-controller="Properties" asp-action="Details" asp-route-id="@row.Property.Id">@row.Property.Reference</a><div class="sub-cell">@row.Property.ShortAddress</div></td>
+                                <td>@row.Type.Label()</td>
+                                <td>@(row.Certificate?.ExpiresOn.ShortDate() ?? "Not recorded")</td>
+                                <td><span class="badge badge-@row.State.Tone()">@row.State.Label()</span></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Contact timeline</div><div class="card-sub">Recent conversations and notes</div></div><a class="link-arrow" asp-controller="Contacts" asp-action="Index">All CRM <icon name="arrow-right" /></a></div>
+            <div class="card-body">
+                @if (Model.Notes.Count == 0)
+                {
+                    <div class="small muted">No contact notes recorded for this owner.</div>
+                }
+                else
+                {
+                    <div class="timeline">
+                        @foreach (var note in Model.Notes)
+                        {
+                            <div class="timeline-item">
+                                <span class="timeline-dot @(note.IsFollowUp ? "accent" : "")"></span>
+                                <div class="timeline-head"><span class="timeline-title">@note.Channel.Label()</span><span class="timeline-time">@note.OccurredAt.Relative()</span></div>
+                                <div class="timeline-text">@note.Summary</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Owner details</div><div class="card-sub">Client record</div></div></div>
+            <div class="card-body">
+                <div class="row" style="margin-bottom:14px">
+                    <span class="avatar lg accent">@(Model.Owner.DisplayName.Split(' ').Select(p => p[..1]).Aggregate("", (a, b) => a + b))</span>
+                    <div><div style="font-weight:650">@Model.Owner.DisplayName</div><div class="small muted">@Model.Owner.CompanyName</div></div>
+                </div>
+                <div class="stack-sm small">
+                    <div class="row between"><span class="muted">Email</span><span>@Model.Owner.Email</span></div>
+                    <div class="row between"><span class="muted">Phone</span><span>@(Model.Owner.Phone ?? "—")</span></div>
+                    <div class="row between"><span class="muted">Management fee</span><span>@Model.Owner.ManagementFeePercent%</span></div>
+                    <div class="row between"><span class="muted">Onboarded</span><span>@Model.Owner.OnboardedOn.ShortDate()</span></div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Owner.Address))
+                {
+                    <div class="divider"></div>
+                    <div class="small muted">@Model.Owner.Address</div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Onboarding</div><div class="card-sub">Agreement and account setup</div></div></div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <span class="timeline-dot sage"></span>
+                        <div class="timeline-head"><span class="timeline-title">Owner record created</span><span class="timeline-time">@Model.Owner.OnboardedOn.ShortDate()</span></div>
+                        <div class="timeline-text">Added to the client register.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-dot @(Model.Owner.AgreementSigned ? "sage" : "")"></span>
+                        <div class="timeline-head"><span class="timeline-title">Management agreement</span><span class="timeline-time">@(Model.Owner.AgreementSignedOn?.ShortDate() ?? "Not signed")</span></div>
+                        <div class="timeline-text">@(Model.Owner.AgreementSigned ? "Signed and on record." : "Awaiting signature before onboarding completes.")</div>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-dot @(Model.Owner.Status == OwnerStatus.Active ? "sage" : "")"></span>
+                        <div class="timeline-head"><span class="timeline-title">Active management</span><span class="timeline-time">@Model.Owner.Status.Label()</span></div>
+                        <div class="timeline-text">@(Model.Owner.Status == OwnerStatus.Active ? "The portfolio is live with the agency." : "Complete onboarding to activate the portfolio.")</div>
+                    </div>
+                </div>
+                @if (Model.Owner.Status != OwnerStatus.Active)
+                {
+                    <form asp-action="AdvanceStatus" method="post" style="margin-top:14px">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Owner.Id" />
+                        <button class="btn btn-outline btn-block" type="submit">Advance onboarding stage</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Owner.Notes))
+        {
+            <div class="panel">
+                <div class="kicker" style="margin-bottom:7px">Internal note</div>
+                <div class="small muted" style="line-height:1.6">@Model.Owner.Notes</div>
+            </div>
+        }
+    </div>
+</div>

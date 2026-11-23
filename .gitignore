@@ -1,0 +1,26 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+
+# Runtime data
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Publish output / deployment artifacts
+publish/
+artifacts/
+*.zip

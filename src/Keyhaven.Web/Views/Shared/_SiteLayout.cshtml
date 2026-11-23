@@ -1,0 +1,92 @@
+@{
+    var toast = TempData["Toast"] as string;
+    var toastTone = TempData["ToastTone"] as string ?? "positive";
+}
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] ?? "Property management, considered") · Keyhaven</title>
+    <meta name="description" content="Keyhaven is the AI-assisted property management platform for letting agencies. Less admin, more letting." />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="site-body">
+<header class="site-header">
+    <a class="site-brand" asp-controller="Home" asp-action="Index">
+        <span class="brand-mark"><icon name="key" /></span>
+        <span>
+            <span class="brand-name">Keyhaven</span>
+            <span class="brand-tag">Property platform</span>
+        </span>
+    </a>
+    <nav class="site-nav">
+        <a asp-controller="Home" asp-action="Index" asp-fragment="platform">Platform</a>
+        <a asp-controller="Home" asp-action="Lettings">Lettings</a>
+        <a asp-controller="Home" asp-action="Index" asp-fragment="ai">AI inbox</a>
+        <a asp-controller="Home" asp-action="Index" asp-fragment="portfolio">Portfolio</a>
+        <a asp-controller="Home" asp-action="Index" asp-fragment="contact">Contact</a>
+    </nav>
+    <div class="site-actions">
+        <a class="btn btn-ghost" asp-controller="Account" asp-action="Login">Log in</a>
+        <a class="btn btn-primary" asp-controller="Account" asp-action="Login">Open the demo <icon name="arrow-right" /></a>
+    </div>
+</header>
+
+@RenderBody()
+
+<footer class="site-footer" id="contact">
+    <div class="site-wrap">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a class="site-brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark"><icon name="key" /></span>
+                    <span>
+                        <span class="brand-name">Keyhaven</span>
+                        <span class="brand-tag">Property platform</span>
+                    </span>
+                </a>
+                <p>Built for UK letting agencies. One connected workspace for the portfolio, the paperwork and the people.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Platform</h5>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="platform">Overview</a>
+                <a asp-controller="Home" asp-action="Lettings">Lettings workflows</a>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="ai">AI inbox</a>
+                <a asp-controller="Account" asp-action="Login">Live demo</a>
+            </div>
+            <div class="footer-col">
+                <h5>Operations</h5>
+                <a asp-controller="Home" asp-action="Lettings" asp-fragment="compliance">Compliance</a>
+                <a asp-controller="Home" asp-action="Lettings" asp-fragment="client-money">Client money</a>
+                <a asp-controller="Home" asp-action="Lettings" asp-fragment="repairs">Repairs</a>
+                <a asp-controller="Home" asp-action="Lettings" asp-fragment="key-vault">Key vault</a>
+            </div>
+            <div class="footer-col">
+                <h5>Company</h5>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="contact">Contact</a>
+                <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+                <a href="mailto:hello@keyhaven.example">hello@keyhaven.example</a>
+                <span class="small muted" style="display:block;padding:3px 0">Glasgow, United Kingdom</span>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© @DateTime.Today.Year Keyhaven. A demonstration platform — not affiliated with any real agency.</span>
+            <span>Made for the British letting environment.</span>
+        </div>
+    </div>
+</footer>
+
+@if (!string.IsNullOrWhiteSpace(toast))
+{
+    <div class="toast @toastTone">
+        <icon name="check" />
+        <div>@toast</div>
+        <button class="toast-close" type="button" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
+    </div>
+}
+
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

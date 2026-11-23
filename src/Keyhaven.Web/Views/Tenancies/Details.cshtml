@@ -1,0 +1,215 @@
+@model TenancyDetailsViewModel
+@{
+    ViewData["Title"] = Model.Tenancy.Tenant?.FullName ?? "Tenancy";
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var unpaid = Model.Charges.Where(c => !c.IsFullyPaid).ToList();
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Tenancy · @Model.Tenancy.Property?.Reference</div>
+        <h1 class="page-title">@Model.Tenancy.Tenant?.FullName</h1>
+        <p class="page-subtitle">@Model.Tenancy.Property?.FullAddress · Started @Model.Tenancy.StartDate.ShortDate()</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-action="Index">← Tenancies</a>
+        @if (isStaff)
+        {
+            <a class="btn btn-outline" asp-action="Edit" asp-route-id="@Model.Tenancy.Id"><icon name="doc" /> Edit</a>
+            <a class="btn btn-primary" asp-controller="Rent" asp-action="Index"><icon name="wallet" /> Rent ledger</a>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="pound" /></div>
+        <div class="stat-label">Rent</div>
+        <div class="stat-value">@Model.Tenancy.RentAmount.Money()</div>
+        <div class="stat-meta">Per calendar month</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon"><icon name="lock" /></div>
+        <div class="stat-label">Deposit</div>
+        <div class="stat-value">@Model.Tenancy.DepositAmount.Money()</div>
+        <div class="stat-meta">@Model.Tenancy.DepositSchemeDisplay · @(Model.Tenancy.DepositRegistered ? "protected" : "not registered")</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.Outstanding > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Outstanding</div>
+        <div class="stat-value" style="@(Model.Outstanding > 0 ? "color:var(--danger)" : "")">@Model.Outstanding.Money()</div>
+        <div class="stat-meta">@unpaid.Count unpaid charge@(unpaid.Count == 1 ? "" : "s")</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="clock" /></div>
+        <div class="stat-label">Status</div>
+        <div class="stat-value small-value">@Model.Tenancy.Status.Label()</div>
+        <div class="stat-meta">@(Model.Tenancy.EndDate is null ? "Periodic tenancy" : $"Ends {Model.Tenancy.EndDate.Value.ShortDate()}")</div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Tenancy.NoticeType))
+{
+    <div class="callout warning section-gap">
+        <icon name="alert" />
+        <div><strong>@Model.Tenancy.NoticeType</strong> served @(Model.Tenancy.NoticeServedOn?.ShortDate() ?? ""). The tenancy is marked as ending.</div>
+    </div>
+}
+
+<div class="split section-gap">
+    <div class="card">
+        <div class="card-header">
+            <div><div class="card-title">Rent schedule</div><div class="card-sub">Charges, payments and reconciliation</div></div>
+            <a class="link-arrow" asp-controller="Rent" asp-action="Index">Full ledger <icon name="arrow-right" /></a>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Period</th><th>Due</th><th class="num">Amount</th><th class="num">Paid</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var charge in Model.Charges)
+                {
+                    var overdue = charge.IsOverdue(today);
+                    <tr class="@(overdue ? "row-danger" : "")">
+                        <td class="primary-cell">@charge.PeriodStart.ToString("MMMM yyyy")<div class="sub-cell">@charge.BankReference</div></td>
+                        <td>@charge.DueDate.ShortDate()</td>
+                        <td class="num">@charge.Amount.Money()</td>
+                        <td class="num">@charge.AmountPaid.Money()</td>
+                        <td>
+                            @if (charge.IsFullyPaid)
+                            {
+                                <span class="badge badge-positive">Paid</span>
+                            }
+                            else if (overdue)
+                            {
+                                <span class="badge badge-danger">Overdue</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-warning">Due</span>
+                            }
+                        </td>
+                        <td class="text-right">
+                            @if (isStaff)
+                            {
+                                <details class="details-pop" style="display:inline-block;text-align:left">
+                                    <summary class="btn btn-outline btn-sm">Record</summary>
+                                    <div class="pop-panel" style="width:240px;position:absolute;right:0;z-index:20">
+                                        <form asp-controller="Rent" asp-action="RecordPayment" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="ChargeId" value="@charge.Id" />
+                                            <div class="field"><label>Amount (£)</label><input name="Amount" type="number" step="0.01" min="0.01" value="@charge.Outstanding.ToString("0.00")" /></div>
+                                            <div class="field"><label>Paid on</label><input name="PaidOn" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+                                            <div class="field"><label>Bank reference</label><input name="BankReference" value="@charge.BankReference" /></div>
+                                            <button class="btn btn-primary btn-sm" type="submit">Record payment</button>
+                                        </form>
+                                    </div>
+                                </details>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Agreement</div><div class="card-sub">Tenancy record</div></div></div>
+            <div class="card-body">
+                <div class="meta-grid">
+                    <div class="meta-item"><div class="meta-label">Tenant</div><div class="meta-value">@Model.Tenancy.Tenant?.FullName</div><div class="meta-sub">@Model.Tenancy.Tenant?.Email</div></div>
+                    <div class="meta-item"><div class="meta-label">Phone</div><div class="meta-value">@(Model.Tenancy.Tenant?.Phone ?? "—")</div></div>
+                    <div class="meta-item"><div class="meta-label">Start</div><div class="meta-value">@Model.Tenancy.StartDate.ShortDate()</div></div>
+                    <div class="meta-item"><div class="meta-label">End</div><div class="meta-value">@(Model.Tenancy.EndDate?.ShortDate() ?? "Periodic")</div></div>
+                    <div class="meta-item"><div class="meta-label">Referencing</div><div class="meta-value">@Model.Tenancy.Tenant?.ReferencingStatus.Label()</div></div>
+                    <div class="meta-item"><div class="meta-label">Right to Rent</div><div class="meta-value">@(Model.Tenancy.Tenant?.RightToRentChecked == true ? "Checked" : "Not checked")</div><div class="meta-sub">@(Model.Tenancy.Tenant?.RightToRentCheckedOn?.ShortDate() ?? "—")</div></div>
+                </div>
+            </div>
+        </div>
+
+        @if (isStaff)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Deposit protection</div><div class="card-sub">Scheme registration</div></div></div>
+                <div class="card-body">
+                    @if (Model.Tenancy.DepositRegistered)
+                    {
+                        <div class="callout">
+                            <icon name="check" />
+                            <div>Registered with <strong>@Model.Tenancy.DepositScheme</strong> on @(Model.Tenancy.DepositRegisteredOn?.ShortDate() ?? "—").</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="callout warning"><icon name="alert" /><div>This deposit is not yet recorded as protected. Register it with the chosen scheme.</div></div>
+                    }
+                    <form asp-action="RegisterDeposit" method="post" style="margin-top:12px">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Tenancy.Id" />
+                        <div class="field">
+                            <label>Deposit scheme</label>
+                            <select name="scheme">
+                                @foreach (var scheme in new[] { "TDS", "DPS", "MyDeposits", "SafeDeposits Scotland" })
+                                {
+                                    <option value="@scheme" selected="@(Model.Tenancy.DepositScheme == scheme)">@scheme</option>
+                                }
+                            </select>
+                        </div>
+                        <button class="btn btn-outline btn-block" type="submit">@(Model.Tenancy.DepositRegistered ? "Update registration" : "Register deposit")</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Ending the tenancy</div><div class="card-sub">Serve notice or close the agreement</div></div></div>
+                <div class="card-body">
+                    <form asp-action="ServeNotice" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Tenancy.Id" />
+                        <div class="field">
+                            <label>Notice type</label>
+                            <select name="noticeType">
+                                <option>Section 21</option>
+                                <option>Section 8</option>
+                                <option>Notice to Leave (Scotland)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline btn-block" type="submit" data-confirm="Record this notice and mark the tenancy as ending?">Serve notice</button>
+                    </form>
+                    @if (Model.Tenancy.Status != TenancyStatus.Ended)
+                    {
+                        <form asp-action="EndTenancy" method="post" style="margin-top:10px">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Tenancy.Id" />
+                            <button class="btn btn-danger btn-block" type="submit" data-confirm="End this tenancy today and mark the property available?">End tenancy</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Notes</div><div class="card-sub">Related conversations</div></div></div>
+            <div class="card-body">
+                @if (Model.Notes.Count == 0)
+                {
+                    <div class="small muted">No notes recorded for this tenancy.</div>
+                }
+                else
+                {
+                    <div class="timeline">
+                        @foreach (var note in Model.Notes)
+                        {
+                            <div class="timeline-item">
+                                <span class="timeline-dot"></span>
+                                <div class="timeline-head"><span class="timeline-title">@note.Channel.Label()</span><span class="timeline-time">@note.OccurredAt.Relative()</span></div>
+                                <div class="timeline-text">@note.Summary</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

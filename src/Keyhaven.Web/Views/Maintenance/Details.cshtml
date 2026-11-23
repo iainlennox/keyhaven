@@ -1,0 +1,281 @@
+@model MaintenanceDetailsViewModel
+@{
+    ViewData["Title"] = Model.Ticket.Reference;
+    var ticket = Model.Ticket;
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var isContractor = User.IsInRole(Roles.Contractor);
+    var isTenant = User.IsInRole(Roles.Tenant);
+    var isOpen = ticket.Status != MaintenanceStatus.Completed && ticket.Status != MaintenanceStatus.Closed;
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Repair · @ticket.Reference</div>
+        <h1 class="page-title">@ticket.Title</h1>
+        <p class="page-subtitle">@ticket.Property?.FullAddress · Reported @ticket.CreatedAt.Relative()</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-action="Index">← Maintenance</a>
+        @if (isStaff)
+        {
+            <form asp-action="Triage" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@ticket.Id" />
+                <button class="btn btn-primary" type="submit"><icon name="sparkles" /> Re-run AI triage</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row wrap" style="margin-bottom:18px">
+    <span class="badge badge-lg badge-@ticket.Urgency.Tone()">@ticket.Urgency.Label() priority</span>
+    <span class="badge badge-lg badge-@ticket.Status.Tone()">@ticket.Status.Label()</span>
+    <span class="pill"><icon name="wrench" /> @ticket.Category.Label()</span>
+    @if (ticket.AssignedContractor is not null)
+    {
+        <span class="pill"><icon name="user" /> @ticket.AssignedContractor.Name</span>
+    }
+</div>
+
+<div class="split">
+    <div class="stack-md">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Reported issue</div><div class="card-sub">In the tenant or inspector's words</div></div></div>
+            <div class="card-body">
+                <p style="font-size:14px;line-height:1.7">@ticket.Description</p>
+                <div class="divider"></div>
+                <div class="meta-grid">
+                    <div class="meta-item"><div class="meta-label">Property</div><div class="meta-value"><a asp-controller="Properties" asp-action="Details" asp-route-id="@ticket.PropertyId">@ticket.Property?.Reference</a></div><div class="meta-sub">@ticket.Property?.ShortAddress</div></div>
+                    <div class="meta-item"><div class="meta-label">Reported by</div><div class="meta-value">@(ticket.Tenant?.FullName ?? "Agency inspection")</div><div class="meta-sub">@(ticket.Tenant?.Email ?? "Internal record")</div></div>
+                    <div class="meta-item"><div class="meta-label">Logged</div><div class="meta-value">@ticket.CreatedAt.ToString("d MMM yyyy")</div><div class="meta-sub">@ticket.CreatedAt.TimeLabel()</div></div>
+                    <div class="meta-item"><div class="meta-label">Access</div><div class="meta-value">@(string.IsNullOrWhiteSpace(ticket.AccessInstructions) ? "Not recorded" : "Recorded")</div><div class="meta-sub">See job details</div></div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(ticket.AccessInstructions) && (isStaff || isContractor))
+                {
+                    <div class="callout info" style="margin-top:14px">
+                        <icon name="lock" />
+                        <div><strong>Access instructions:</strong> @ticket.AccessInstructions</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="ai-panel">
+            <div class="ai-head"><icon name="sparkles" /> AI triage</div>
+            @if (string.IsNullOrWhiteSpace(ticket.AiSummary))
+            {
+                <div class="ai-title">Not triaged yet.</div>
+                <div class="ai-text">Run triage to read the report, suggest an urgency and identify the likely trade. A person still makes the call.</div>
+            }
+            else
+            {
+                <div class="ai-title">@ticket.AiSummary</div>
+                <div class="ai-text">@ticket.AiReason</div>
+                <div class="ai-meta">
+                    <span class="badge badge-@(ticket.AiSuggestedUrgency?.Tone() ?? "muted")">Suggested: @(ticket.AiSuggestedUrgency?.Label() ?? "—")</span>
+                    <span class="badge badge-@ticket.Urgency.Tone()">Current: @ticket.Urgency.Label()</span>
+                </div>
+                <div class="tiny muted" style="margin-top:10px">AI triage supports the decision; it does not dispatch a contractor on its own.</div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Job details</div><div class="card-sub">Quote, contractor and completion</div></div></div>
+            <div class="card-body">
+                <div class="meta-grid">
+                    <div class="meta-item"><div class="meta-label">Contractor</div><div class="meta-value">@(ticket.AssignedContractor?.Name ?? "Not assigned")</div><div class="meta-sub">@(ticket.AssignedContractor?.Trade ?? "Choose a trade below")</div></div>
+                    <div class="meta-item"><div class="meta-label">Quote</div><div class="meta-value">@(ticket.QuoteAmount is null ? "No quote yet" : ticket.QuoteAmount.Value.Money2())</div><div class="meta-sub">@(ticket.QuoteApproved == true ? "Approved" : ticket.QuoteApproved == false ? "Declined" : "Awaiting approval")</div></div>
+                    <div class="meta-item"><div class="meta-label">Last updated</div><div class="meta-value">@ticket.UpdatedAt.Relative()</div></div>
+                    <div class="meta-item"><div class="meta-label">Completed</div><div class="meta-value">@(ticket.CompletedAt?.ShortDate() ?? "—")</div></div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(ticket.QuoteNotes))
+                {
+                    <div class="divider"></div>
+                    <div class="small muted"><strong style="color:var(--ink)">Quote notes:</strong> @ticket.QuoteNotes</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(ticket.CompletionNotes))
+                {
+                    <div class="divider"></div>
+                    <div class="small muted"><strong style="color:var(--ink)">Completion notes:</strong> @ticket.CompletionNotes</div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Thread</div><div class="card-sub">What has happened so far</div></div></div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <span class="timeline-dot danger"></span>
+                        <div class="timeline-head"><span class="timeline-title">Reported</span><span class="timeline-time">@ticket.CreatedAt.Relative()</span></div>
+                        <div class="timeline-text">Logged against @ticket.Property?.Reference with @ticket.Urgency.Label().ToLowerInvariant() priority.</div>
+                    </div>
+                    @if (ticket.AiSummary is not null)
+                    {
+                        <div class="timeline-item">
+                            <span class="timeline-dot sage"></span>
+                            <div class="timeline-head"><span class="timeline-title">Triaged by assistant</span><span class="timeline-time">@ticket.CreatedAt.Relative()</span></div>
+                            <div class="timeline-text">@ticket.AiSummary</div>
+                        </div>
+                    }
+                    @if (ticket.AssignedContractor is not null)
+                    {
+                        <div class="timeline-item">
+                            <span class="timeline-dot accent"></span>
+                            <div class="timeline-head"><span class="timeline-title">Contractor assigned</span><span class="timeline-time">@ticket.UpdatedAt.Relative()</span></div>
+                            <div class="timeline-text">@ticket.AssignedContractor.Name (@ticket.AssignedContractor.Trade) is on the job.</div>
+                        </div>
+                    }
+                    @if (ticket.QuoteAmount is not null)
+                    {
+                        <div class="timeline-item">
+                            <span class="timeline-dot @(ticket.QuoteApproved == true ? "sage" : "")"></span>
+                            <div class="timeline-head"><span class="timeline-title">Quote @(ticket.QuoteApproved == true ? "approved" : ticket.QuoteApproved == false ? "declined" : "awaiting approval")</span><span class="timeline-time">@ticket.QuoteAmount.Value.Money2()</span></div>
+                            <div class="timeline-text">@(ticket.QuoteNotes ?? "No notes recorded.")</div>
+                        </div>
+                    }
+                    @if (ticket.CompletedAt is not null)
+                    {
+                        <div class="timeline-item">
+                            <span class="timeline-dot sage"></span>
+                            <div class="timeline-head"><span class="timeline-title">Completed</span><span class="timeline-time">@ticket.CompletedAt.Value.ShortDate()</span></div>
+                            <div class="timeline-text">@(ticket.CompletionNotes ?? "No completion notes recorded.")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="stack-md">
+        @if (isStaff)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Actions</div><div class="card-sub">Move the job forward</div></div></div>
+                <div class="card-body stack-md">
+                    @if (isOpen)
+                    {
+                        <form asp-action="Quote" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ticket.Id" />
+                            <div class="field">
+                                <label>Contractor</label>
+                                <select name="contractorId" asp-items="ViewBag.Contractors"><option value="0">Choose a contractor</option></select>
+                            </div>
+                            <div class="form-grid">
+                                <div class="field"><label>Quote (£)</label><input name="quoteAmount" type="number" step="0.01" min="0" value="@(ticket.QuoteAmount?.ToString("0.00") ?? "")" /></div>
+                                <div class="field"><label>Notes</label><input name="quoteNotes" value="@ticket.QuoteNotes" placeholder="Parts & labour" /></div>
+                            </div>
+                            <button class="btn btn-outline btn-block" type="submit">Save quote & request approval</button>
+                        </form>
+
+                        @if (ticket.Status == MaintenanceStatus.AwaitingApproval)
+                        {
+                            <div class="row" style="gap:8px">
+                                <form asp-action="ApproveQuote" method="post" style="flex:1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@ticket.Id" />
+                                    <button class="btn btn-primary btn-block" type="submit">Approve @(ticket.QuoteAmount?.Money2())</button>
+                                </form>
+                                <form asp-action="DeclineQuote" method="post" style="flex:1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@ticket.Id" />
+                                    <button class="btn btn-danger btn-block" type="submit">Decline</button>
+                                </form>
+                            </div>
+                        }
+
+                        <div class="divider"></div>
+                        <form asp-action="Assign" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ticket.Id" />
+                            <div class="field">
+                                <label>Assign contractor</label>
+                                <select name="contractorId" asp-items="ViewBag.Contractors"></select>
+                            </div>
+                            <button class="btn btn-outline btn-block" type="submit">Assign</button>
+                        </form>
+                    }
+                    @if (ticket.Status is MaintenanceStatus.Assigned or MaintenanceStatus.Quoted or MaintenanceStatus.InProgress)
+                    {
+                        <form asp-action="Start" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ticket.Id" />
+                            <button class="btn btn-outline btn-block" type="submit">Mark in progress</button>
+                        </form>
+                    }
+                    @if (isOpen)
+                    {
+                        <form asp-action="Complete" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ticket.Id" />
+                            <div class="field"><label>Completion notes</label><textarea name="completionNotes" rows="2" placeholder="What was done, parts used, follow-up needed…"></textarea></div>
+                            <button class="btn btn-primary btn-block" type="submit">Mark completed</button>
+                        </form>
+                    }
+                    @if (ticket.Status == MaintenanceStatus.Completed)
+                    {
+                        <form asp-action="Close" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ticket.Id" />
+                            <button class="btn btn-outline btn-block" type="submit">Close job</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+        else if (isContractor)
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">Your job</div><div class="card-sub">Update the status</div></div></div>
+                <div class="card-body stack-md">
+                    <div class="callout info"><icon name="lock" /><div>@(string.IsNullOrWhiteSpace(ticket.AccessInstructions) ? "Access instructions are not recorded. Check with the office." : ticket.AccessInstructions)</div></div>
+                    @if (ticket.Status is not (MaintenanceStatus.Completed or MaintenanceStatus.Closed))
+                    {
+                        <form asp-action="Start" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ticket.Id" />
+                            <button class="btn btn-outline btn-block" type="submit">Start job</button>
+                        </form>
+                        <form asp-action="Complete" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ticket.Id" />
+                            <div class="field"><label>Completion notes</label><textarea name="completionNotes" rows="3" placeholder="Work carried out and anything the office should know."></textarea></div>
+                            <button class="btn btn-primary btn-block" type="submit">Mark completed</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="callout"><icon name="check" /><div>This job is @ticket.Status.Label().ToLowerInvariant().</div></div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-header"><div><div class="card-title">What happens next</div><div class="card-sub">Your repair in the team's hands</div></div></div>
+                <div class="card-body">
+                    <div class="callout"><icon name="check" /><div>The repair is @ticket.Status.Label().ToLowerInvariant(). We'll keep the status updated here, and the team will contact you if access is needed.</div></div>
+                    @if (!string.IsNullOrWhiteSpace(ticket.AccessInstructions))
+                    {
+                        <div class="callout info" style="margin-top:10px"><icon name="lock" /><div>@ticket.AccessInstructions</div></div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Property</div><div class="card-sub">The record behind the job</div></div></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="list-icon"><icon name="building" /></div>
+                    <div style="flex:1">
+                        <div class="small strong">@ticket.Property?.Reference</div>
+                        <div class="tiny muted">@ticket.Property?.ShortAddress</div>
+                    </div>
+                </div>
+                <a class="btn btn-outline btn-block" style="margin-top:12px" asp-controller="Properties" asp-action="Details" asp-route-id="@ticket.PropertyId">Open property record</a>
+            </div>
+        </div>
+    </div>
+</div>

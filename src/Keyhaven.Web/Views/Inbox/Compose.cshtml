@@ -1,0 +1,71 @@
+@model ComposeInboxModel
+@{
+    ViewData["Title"] = "Simulate an email";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">AI inbox</div>
+        <h1 class="page-title">Simulate an inbound email.</h1>
+        <p class="page-subtitle">Send a message into the demo inbox and watch the assistant classify it, ground it and decide what to do.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-outline" asp-action="Index">← Inbox</a></div>
+</div>
+
+<div class="split-even">
+    <div class="card">
+        <div class="card-header"><div><div class="card-title">The email</div><div class="card-sub">What would arrive in the inbox</div></div></div>
+        <div class="card-body">
+            <form asp-action="Compose" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="FromName">From name</label>
+                        <input asp-for="FromName" placeholder="Amy Li" />
+                        <span asp-validation-for="FromName" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="FromEmail">From email</label>
+                        <input asp-for="FromEmail" type="email" placeholder="amy@example.com" />
+                        <span asp-validation-for="FromEmail" class="field-error"></span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="PropertyId">Linked property <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+                    <select asp-for="PropertyId" asp-items="ViewBag.Properties"><option value="">Let the assistant infer it</option></select>
+                    <div class="field-hint">The assistant will also try to match an address or postcode in the body.</div>
+                </div>
+                <div class="field">
+                    <label asp-for="Subject">Subject</label>
+                    <input asp-for="Subject" placeholder="Is 7 Bellevue Crescent still available?" />
+                    <span asp-validation-for="Subject" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Body">Message</label>
+                    <textarea asp-for="Body" rows="8" placeholder="Hi, I'm interested in the flat. Is it still available and what is the rent?"></textarea>
+                    <span asp-validation-for="Body" class="field-error"></span>
+                </div>
+                <button class="btn btn-primary" type="submit"><icon name="sparkles" /> Triage this email</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="stack-md">
+        <div class="ai-panel">
+            <div class="ai-head"><icon name="sparkles" /> What happens next</div>
+            <div class="ai-title">Classified, linked, grounded.</div>
+            <div class="ai-text">The message is categorised, matched to a property and the relevant tenancy, repair or owner record. A routine answer with a complete record can be sent automatically; anything else becomes a draft or an escalation.</div>
+        </div>
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Try one of these</div><div class="card-sub">Examples that exercise the assistant</div></div></div>
+            <div class="card-body stack-sm small">
+                <div><strong>Enquiry</strong> — “Is 7 Bellevue Crescent still available? What's the rent?”</div>
+                <div><strong>Repair</strong> — “Any news on the leaking kitchen tap at 12 Clarence Drive?”</div>
+                <div><strong>Access</strong> — “Can you confirm access for the job at 12 Clarence Drive?”</div>
+                <div><strong>Statement</strong> — “Could you send my statement for the last quarter?”</div>
+                <div><strong>Rent</strong> — “I think I'm behind with the rent — what do I owe?”</div>
+                <div><strong>Viewing</strong> — “Could we reschedule our viewing at 7 Bellevue Crescent?”</div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,135 @@
+@model PropertyFormModel
+@{
+    var isEdit = Model.Id != 0;
+    ViewData["Title"] = isEdit ? "Edit property" : "Add property";
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Portfolio</div>
+        <h1 class="page-title">@(isEdit ? $"Edit {Model.Reference}" : "Add a property")</h1>
+        <p class="page-subtitle">The property record is the anchor for tenancies, rent, repairs, certificates and the key vault.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline" asp-action="Index">← Cancel</a>
+    </div>
+</div>
+
+<form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@(isEdit ? Model.Id : (int?)null)">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+    <div class="split-even">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Address & ownership</div><div class="card-sub">Where the property sits and who it belongs to</div></div></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="Reference">Property reference</label>
+                        <input asp-for="Reference" placeholder="KH-1009" />
+                        <span asp-validation-for="Reference" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="OwnerId">Owner</label>
+                        <select asp-for="OwnerId" asp-items="ViewBag.Owners"><option value="">Choose an owner</option></select>
+                        <span asp-validation-for="OwnerId" class="field-error"></span>
+                    </div>
+                    <div class="field span-2">
+                        <label asp-for="AddressLine1">Address line 1</label>
+                        <input asp-for="AddressLine1" placeholder="12 Clarence Drive" />
+                        <span asp-validation-for="AddressLine1" class="field-error"></span>
+                    </div>
+                    <div class="field span-2">
+                        <label asp-for="AddressLine2">Address line 2 <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+                        <input asp-for="AddressLine2" placeholder="Hyndland" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="City">City</label>
+                        <input asp-for="City" placeholder="Glasgow" />
+                        <span asp-validation-for="City" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Postcode">Postcode</label>
+                        <input asp-for="Postcode" placeholder="G12 9QN" />
+                        <span asp-validation-for="Postcode" class="field-error"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Letting details</div><div class="card-sub">Size, rent and current status</div></div></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="Type">Property type</label>
+                        <select asp-for="Type" asp-items="Html.GetEnumSelectList<PropertyType>()"></select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Status">Status</label>
+                        <select asp-for="Status" asp-items="Html.GetEnumSelectList<PropertyStatus>()"></select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Bedrooms">Bedrooms</label>
+                        <input asp-for="Bedrooms" type="number" min="0" max="20" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="Bathrooms">Bathrooms</label>
+                        <input asp-for="Bathrooms" type="number" min="0" max="10" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="MonthlyRent">Monthly rent (£)</label>
+                        <input asp-for="MonthlyRent" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="MonthlyRent" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="EpcRating">EPC rating</label>
+                        <input asp-for="EpcRating" placeholder="C" maxlength="2" />
+                    </div>
+                </div>
+                <div class="callout" style="margin-top:6px">
+                    <icon name="shield" />
+                    <div>Compliance certificates are managed in the compliance register. Add them after the property is created.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card section-gap">
+        <div class="card-header"><div><div class="card-title">Marketing</div><div class="card-sub">What applicants see when the listing is live</div></div></div>
+        <div class="card-body">
+            <div class="form-grid">
+                <div class="field">
+                    <label asp-for="MarketingHeadline">Headline</label>
+                    <input asp-for="MarketingHeadline" placeholder="Two-bedroom flat in the heart of Hyndland" />
+                </div>
+                <div class="field">
+                    <label asp-for="Channels">Channels</label>
+                    <input asp-for="Channels" placeholder="Rightmove, Find your Home, Agency website" />
+                </div>
+                <div class="field span-2">
+                    <label asp-for="MarketingSummary">Summary</label>
+                    <textarea asp-for="MarketingSummary" rows="2" placeholder="A short paragraph for the listing card."></textarea>
+                </div>
+                <div class="field span-2">
+                    <label asp-for="Description">Full description</label>
+                    <textarea asp-for="Description" rows="4" placeholder="The longer property description."></textarea>
+                </div>
+                <div class="field">
+                    <label asp-for="ImageUrl">Image path</label>
+                    <input asp-for="ImageUrl" placeholder="/img/property-glasgow.svg" />
+                    <div class="field-hint">Use one of the bundled illustrations or a path to an uploaded image.</div>
+                </div>
+                <div class="field" style="display:flex;align-items:flex-end">
+                    <label class="checkbox"><input asp-for="ListingPublished" /> Publish the listing now</label>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="form-actions" style="margin:0;padding:0;border:0">
+                <button class="btn btn-primary" type="submit">@(isEdit ? "Save changes" : "Create property")</button>
+                <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>

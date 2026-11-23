@@ -1,0 +1,182 @@
+@model ComplianceIndexViewModel
+@{
+    ViewData["Title"] = "Compliance";
+    var isStaff = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager);
+    var isTenant = User.IsInRole(Roles.Tenant);
+    var contractors = ViewBag.Contractors as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Certificates & compliance</div>
+        <h1 class="page-title">Compliance register.</h1>
+        <p class="page-subtitle">Gas Safety, EPC, EICR and HMO licensing across the portfolio — with renewals assigned before they lapse.</p>
+    </div>
+    <div class="page-actions">
+        @if (isStaff)
+        {
+            <a class="btn btn-primary" asp-action="Create"><icon name="plus" /> Add certificate</a>
+        }
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon @(Model.Summary.Score >= 80 ? "sage" : "warn")"><icon name="shield" /></div>
+        <div class="stat-label">Portfolio score</div>
+        <div class="stat-value">@Model.Summary.Score%</div>
+        <div class="stat-meta">Across @Model.Summary.Properties properties</div>
+        <div class="progress" style="margin-top:9px"><div class="progress-bar @(Model.Summary.Score < 80 ? "danger" : "")" style="width:@Model.Summary.Score%"></div></div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="check" /></div>
+        <div class="stat-label">Valid</div>
+        <div class="stat-value">@Model.Summary.ValidChecks</div>
+        <div class="stat-meta">of @Model.Summary.RequiredChecks required checks</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="clock" /></div>
+        <div class="stat-label">Expiring soon</div>
+        <div class="stat-value">@Model.Summary.ExpiringChecks</div>
+        <div class="stat-meta">Within 30 days</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon danger"><icon name="alert" /></div>
+        <div class="stat-label">Expired or missing</div>
+        <div class="stat-value">@(Model.Summary.ExpiredChecks + Model.Summary.MissingChecks)</div>
+        <div class="stat-meta">@Model.Summary.MissingChecks missing · @Model.Summary.ExpiredChecks expired</div>
+    </div>
+</div>
+
+<form class="filters section-gap" method="get" asp-action="Index">
+    <select name="state" onchange="this.form.submit()">
+        <option value="">All states</option>
+        @foreach (var state in Enum.GetValues<ComplianceState>())
+        {
+            <option value="@state" selected="@(Model.State == state.ToString())">@state.Label()</option>
+        }
+    </select>
+    <select name="type" onchange="this.form.submit()">
+        <option value="">All certificate types</option>
+        @foreach (var type in Enum.GetValues<ComplianceType>())
+        {
+            <option value="@type" selected="@(Model.Type == type)">@type.Label()</option>
+        }
+    </select>
+    @if (!string.IsNullOrWhiteSpace(Model.State) || Model.Type is not null)
+    {
+        <a class="btn btn-ghost btn-sm" asp-action="Index">Clear</a>
+    }
+</form>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Property</th><th>Certificate</th><th>Issued</th><th>Expires</th><th>Status</th><th>Renewal</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                var isAction = row.State is ComplianceState.Expired or ComplianceState.Missing or ComplianceState.ExpiringSoon;
+                <tr class="@(row.State == ComplianceState.Expired || row.State == ComplianceState.Missing ? "row-danger" : row.State == ComplianceState.ExpiringSoon ? "row-warning" : "")">
+                    <td>
+                        <a class="primary-cell" asp-controller="Properties" asp-action="Details" asp-route-id="@row.Property.Id">@row.Property.Reference</a>
+                        <div class="sub-cell">@row.Property.ShortAddress</div>
+                    </td>
+                    <td><span class="primary-cell">@row.Type.Label()</span><div class="sub-cell">@(row.Certificate?.Reference ?? "No certificate on record")</div></td>
+                    <td>@(row.Certificate?.IssuedOn.ShortDate() ?? "—")</td>
+                    <td>
+                        @if (row.Certificate is null)
+                        {
+                            <span class="muted">—</span>
+                        }
+                        else
+                        {
+                            <span>@row.Certificate.ExpiresOn.ShortDate()</span>
+                            <div class="sub-cell">@(row.DaysUntilExpiry < 0 ? $"{Math.Abs(row.DaysUntilExpiry)} days ago" : $"in {row.DaysUntilExpiry} days")</div>
+                        }
+                    </td>
+                    <td><span class="badge badge-@row.State.Tone()">@row.State.Label()</span></td>
+                    <td>
+                        @if (row.Certificate is null)
+                        {
+                            <span class="small muted">Not scheduled</span>
+                        }
+                        else
+                        {
+                            <span class="small">@row.Certificate.RenewalStatus.Label()</span>
+                            @if (row.Certificate.RenewalBookedFor is not null)
+                            {
+                                <div class="sub-cell">@row.Certificate.RenewalBookedFor.Value.ShortDate()</div>
+                            }
+                        }
+                    </td>
+                    <td class="text-right">
+                        @if (isStaff && row.Certificate is not null)
+                        {
+                            <div class="row" style="justify-content:flex-end;gap:5px">
+                                @if (isAction)
+                                {
+                                    <details class="details-pop">
+                                        <summary class="btn btn-outline btn-sm">Schedule</summary>
+                                        <div class="pop-panel" style="width:270px;position:absolute;right:0;z-index:20;text-align:left">
+                                            <form asp-action="ScheduleRenewal" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@row.Certificate.Id" />
+                                                <div class="field">
+                                                    <label>Contractor</label>
+                                                    <select name="contractorId">
+                                                        <option value="0">Not assigned</option>
+                                                        @if (contractors is not null)
+                                                        {
+                                                            foreach (var item in contractors)
+                                                            {
+                                                                <option value="@item.Value" selected="@(row.Certificate.RenewalContractorId?.ToString() == item.Value)">@item.Text</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="field">
+                                                    <label>Booked for</label>
+                                                    <input type="date" name="bookedFor" value="@(row.Certificate.RenewalBookedFor?.ToString("yyyy-MM-dd") ?? "")" />
+                                                </div>
+                                                <button class="btn btn-primary btn-sm" type="submit">Save renewal plan</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                    <a class="btn btn-ghost btn-sm" asp-action="Renew" asp-route-propertyId="@row.Property.Id" asp-route-type="@row.Type" title="Add new certificate"><icon name="refresh" /></a>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-ghost btn-sm" asp-action="Renew" asp-route-propertyId="@row.Property.Id" asp-route-type="@row.Type" title="Record renewal"><icon name="refresh" /></a>
+                                }
+                            </div>
+                        }
+                        else if (isStaff && row.Certificate is null)
+                        {
+                            <a class="btn btn-outline btn-sm" asp-action="Renew" asp-route-propertyId="@row.Property.Id" asp-route-type="@row.Type">Add</a>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="7"><div class="empty" style="padding:26px"><div class="empty-title">No certificates match</div><div class="empty-text">Try a different state or type.</div></div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (isStaff && Model.Summary.ExpiredChecks + Model.Summary.MissingChecks > 0)
+{
+    <div class="callout danger section-gap">
+        <icon name="alert" />
+        <div><strong>@(Model.Summary.ExpiredChecks + Model.Summary.MissingChecks) compliance gap(s)</strong> need attention. Missing certificates count against the portfolio score and should be added as soon as the inspection is complete.</div>
+    </div>
+}
+@if (isTenant)
+{
+    <div class="callout info section-gap">
+        <icon name="shield" />
+        <div>This is the compliance record for your home. If you have a question about a certificate, contact your letting team.</div>
+    </div>
+}

@@ -1,0 +1,122 @@
+@model KeysIndexViewModel
+@{
+    ViewData["Title"] = "Key vault";
+    var now = DateTime.Now;
+    var filters = new (string Key, string Label)[]
+    {
+        ("all", "All keys"), ("out", "Checked out"), ("overdue", "Overdue"), ("in", "In the office")
+    };
+}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Operations</div>
+        <h1 class="page-title">Key vault.</h1>
+        <p class="page-subtitle">Every key and fob, who has it, why, and when it is due back.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-primary" asp-action="Create"><icon name="plus" /> Add key</a>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-icon"><icon name="key" /></div>
+        <div class="stat-label">Keys on record</div>
+        <div class="stat-value">@Model.Total</div>
+        <div class="stat-meta">Across the portfolio</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon warn"><icon name="logout" /></div>
+        <div class="stat-label">Checked out</div>
+        <div class="stat-value">@Model.CheckedOut</div>
+        <div class="stat-meta">Currently with someone</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon @(Model.Overdue > 0 ? "danger" : "sage")"><icon name="alert" /></div>
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value" style="@(Model.Overdue > 0 ? "color:var(--danger)" : "")">@Model.Overdue</div>
+        <div class="stat-meta">Past the due-back time</div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon sage"><icon name="lock" /></div>
+        <div class="stat-label">In the office</div>
+        <div class="stat-value">@(Model.Total - Model.CheckedOut)</div>
+        <div class="stat-meta">Available to sign out</div>
+    </div>
+</div>
+
+<div class="segmented section-gap" style="margin-bottom:14px">
+    @foreach (var filter in filters)
+    {
+        <a class="@(Model.Filter == filter.Key ? "active" : "")" asp-action="Index" asp-route-filter="@filter.Key">@filter.Label</a>
+    }
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Key</th><th>Property</th><th>Status</th><th>Holder</th><th>Due back</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var key in Model.Keys)
+            {
+                var overdue = key.IsCheckedOut && key.DueBackAt < now;
+                <tr class="@(overdue ? "row-danger" : "")">
+                    <td>
+                        <div class="row" style="gap:9px">
+                            <span class="key-icon @(key.IsCheckedOut ? (overdue ? "overdue" : "out") : "")" style="width:32px;height:32px"><icon name="key" /></span>
+                            <span><span class="primary-cell">@key.Label</span><div class="sub-cell">@key.Type.Label() · @(key.Serial ?? "No serial")</div></span>
+                        </div>
+                    </td>
+                    <td>@(key.Property?.Reference ?? "Unassigned")<div class="sub-cell">@key.Property?.ShortAddress</div></td>
+                    <td>
+                        @if (!key.IsCheckedOut)
+                        {
+                            <span class="badge badge-positive">In the office</span>
+                        }
+                        else if (overdue)
+                        {
+                            <span class="badge badge-danger">Overdue</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warning">Checked out</span>
+                        }
+                    </td>
+                    <td>@(key.CheckedOutToName ?? "—")@if (key.CheckedOutAt is not null) { <div class="sub-cell">since @key.CheckedOutAt.Value.Relative()</div> }</td>
+                    <td>@(key.DueBackAt?.ToString("d MMM, HH:mm") ?? "—")@if (overdue) { <div class="sub-cell danger-text">@((now - key.DueBackAt!.Value).Days) day(s) late</div> }</td>
+                    <td class="text-right">
+                        @if (key.IsCheckedOut)
+                        {
+                            <form asp-action="Checkin" method="post" style="margin:0">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@key.Id" />
+                                <button class="btn btn-outline btn-sm" type="submit">Check in</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <details class="details-pop">
+                                <summary class="btn btn-outline btn-sm">Check out</summary>
+                                <div class="pop-panel" style="width:270px;position:absolute;right:0;z-index:20;text-align:left">
+                                    <form asp-action="Checkout" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@key.Id" />
+                                        <div class="field"><label>Checked out to</label><input name="to" placeholder="Name or company" required /></div>
+                                        <div class="field"><label>Reason</label><input name="reason" placeholder="Repair, viewing…" /></div>
+                                        <div class="field"><label>Due back</label><input name="dueBackOn" type="date" value="@DateTime.Today.AddDays(3).ToString("yyyy-MM-dd")" /></div>
+                                        <button class="btn btn-primary btn-sm" type="submit">Sign out key</button>
+                                    </form>
+                                </div>
+                            </details>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Keys.Count == 0)
+            {
+                <tr><td colspan="6"><div class="empty" style="padding:26px"><div class="empty-title">No keys here</div><div class="empty-text">Add a key or fob to the vault.</div></div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
