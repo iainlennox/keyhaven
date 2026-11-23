@@ -9,7 +9,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![ASP.NET Core MVC](https://img.shields.io/badge/ASP.NET%20Core-MVC-512BD4)](https://learn.microsoft.com/aspnet/core/mvc/overview)
 
-Keyhaven is a working, fully seeded property-management platform inspired by the product story on [gorgas.uk](https://gorgas.uk): owner onboarding, marketing, enquiries and viewings, tenancies, client money, repairs, compliance, key control and CRM — plus an inbox assistant that answers only from the records it can see.
+Keyhaven is a working, fully seeded property-management platform for UK letting agencies: owner onboarding, marketing, enquiries and viewings, tenancies, client money, repairs, compliance, key control and CRM — plus an inbox assistant that answers only from the records it can see.
 
 It is a real application, not a static mock-up. Every screenshot below is rendered from the seeded demo database.
 
