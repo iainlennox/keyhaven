@@ -104,7 +104,7 @@ The assistant (`Services/AiInboxService.cs`) is a transparent rules engine over 
 | Viewing reschedule with a matching viewing | **Draft** with the recorded time and no promise of a new slot |
 | No supporting record | **Escalate** to a person |
 
-Every draft shows its source records, confidence score and handling mode. Autosent replies and manual sends are written back to the CRM timeline.
+Every draft shows its source records, confidence score and handling mode. Auto-sent replies and manual sends are written back to the CRM timeline.
 
 ### Demo portfolio
 
@@ -115,7 +115,7 @@ The seed creates a realistic UK portfolio:
 - 6 months of rent charges, including partial payment and arrears
 - 8 repair jobs with triage, quotes and contractor activity
 - 3 missing/expired and 3 expiring compliance certificates
-- 6 viewings, 5 enquiries, 16 keys and fobs, and a 10-message inbox
+- 6 viewings, 5 enquiries, 16 keys and fobs, and an 8-message inbox
 - 4 owners at different onboarding stages
 
 ---
